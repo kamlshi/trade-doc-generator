@@ -227,19 +227,7 @@
   .brand-controls .ctl-row .ctrl{flex:1;display:flex;align-items:center;gap:8px}
   .brand-mini-val{display:inline-block;min-width:36px;text-align:right;color:var(--coral);font-weight:700;font-family:monospace}
   .brand-controls .btn-sm{padding:5px 10px;font-size:12px}
-  .coord-group{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12px}
-  .coord-group label{display:flex;align-items:center;gap:4px;color:var(--muted)}
-  .coord-group input[type=number]{width:80px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:#fff;font-size:12.5px;font-family:monospace}
-  .preset-row{display:flex;gap:4px;flex-wrap:wrap}
-  .preset{padding:4px 9px;border:1px solid var(--line);background:var(--soft);border-radius:6px;font-size:11.5px;cursor:pointer;color:var(--ink);transition:.15s}
-  .preset:hover{background:var(--blue);color:#fff;border-color:var(--blue)}
-  .pick-btn{padding:5px 11px;border:1px solid var(--blue);background:#fff;color:var(--blue);border-radius:6px;font-size:12px;cursor:pointer;font-weight:600}
-  .pick-btn:hover{background:var(--blue);color:#fff}
-  .pick-btn.active{background:var(--blue);color:#fff;box-shadow:0 0 0 3px rgba(31,95,168,.18)}
-  .nudge-row{display:inline-flex;gap:3px;align-items:center}
-  .nudge-row button{width:26px;height:24px;border:1px solid var(--line);background:#fff;border-radius:5px;font-size:13px;cursor:pointer;color:var(--ink);font-family:monospace;display:flex;align-items:center;justify-content:center}
-  .nudge-row button:hover{background:var(--soft)}
-  .nudge-row button:active{background:var(--blue);color:#fff}
+  /* 方向键微调（▲▼◀▶ 键盘 + 1mm/5mm 切换） */
   .nudge-pad{display:grid;grid-template-columns:repeat(3,28px);grid-template-rows:repeat(3,24px);gap:3px;align-items:center;justify-items:center}
   .nudge-pad .empty{visibility:hidden}
   .nudge-pad button{width:26px;height:22px;border:1px solid var(--line);background:#fff;border-radius:5px;font-size:13px;cursor:pointer;color:var(--ink);font-family:monospace;padding:0}
@@ -248,10 +236,6 @@
   .delta-toggle{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;font-family:monospace}
   .delta-toggle button{padding:3px 8px;border:none;background:#fff;color:var(--muted);font-size:11.5px;cursor:pointer;font-family:monospace}
   .delta-toggle button.active{background:var(--navy);color:#fff}
-  .pick-mode{cursor:crosshair !important}
-  .pick-mode *{cursor:crosshair !important}
-  .pick-hint{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;z-index:80;box-shadow:0 4px 12px rgba(0,0,0,.18);font-weight:600}
-  .pick-hint span{opacity:.85;font-weight:400;margin-left:6px}
 
   /* 模板上的 Logo / Seal 叠层 */
   .doc{position:relative;overflow:hidden}
@@ -337,7 +321,7 @@
 
         <div class="card" id="brandCard">
           <h3>2.5 · 印鉴品牌 <span class="cn">Logo &amp; Seal</span></h3>
-          <p style="margin:0 0 10px;font-size:12.5px;color:var(--muted)">为当前卖方公司上传 Logo 与公司印章（PNG/JPG）。上传后系统自动识别图片内容边界并裁剪。<b>默认"浮于底层"</b>：印章层位于文字下方，文字永远不会被印章遮挡；如需突出，可改为"浮于上层"。<b>位置</b>可在左侧 X/Y 数字框输入，也可直接在右侧预览上<b>拖动</b>图片，或点"快捷"按钮锚定到 7 个常用位置。</p>
+          <p style="margin:0 0 10px;font-size:12.5px;color:var(--muted)">为当前卖方公司上传 Logo 与公司印章（PNG/JPG）。上传后系统自动识别图片内容边界并裁剪。<b>默认"浮于底层"</b>：印章层位于文字下方，文字永远不会被印章遮挡；如需突出，可改为"浮于上层"。<b>位置</b>用方向键 ▲▼◀▶ 或键盘 ↑↓←→ 微调，可切换 1mm / 5mm 步长。</p>
           <div class="brand-grid">
             <div class="brand-block">
               <div class="brand-label">公司 Logo <span style="font-weight:500;color:var(--muted);font-size:12px">· 出现在信头</span></div>
@@ -346,26 +330,8 @@
                 <span class="hint-mini">点击或拖入图片</span>
               </div>
               <div class="brand-controls" id="logoCtrls" style="display:none">
-                <div class="ctl-row"><span class="label">位置</span><div class="ctrl">
-                  <div class="coord-group">
-                    <label>X (mm) <input type="number" id="logoX" min="0" max="300" step="0.5" value="10"></label>
-                    <label>Y (mm) <input type="number" id="logoY" min="0" max="400" step="0.5" value="8"></label>
-                  </div>
-                </div></div>
-                <div class="ctl-row"><span class="label">快捷</span><div class="ctrl">
-                  <div class="preset-row">
-                    <button type="button" class="preset" data-kind="logo" data-pos="tl">左上</button>
-                    <button type="button" class="preset" data-kind="logo" data-pos="tr">右上</button>
-                    <button type="button" class="preset" data-kind="logo" data-pos="cl">左中</button>
-                    <button type="button" class="preset" data-kind="logo" data-pos="cr">右中</button>
-                    <button type="button" class="preset" data-kind="logo" data-pos="bl">左下</button>
-                    <button type="button" class="preset" data-kind="logo" data-pos="br">右下</button>
-                    <button type="button" class="preset" data-kind="logo" data-pos="mid">居中</button>
-                  </div>
-                </div></div>
-                <div class="ctl-row"><span class="label">手动定位</span><div class="ctrl">
+                <div class="ctl-row"><span class="label">微调</span><div class="ctrl">
                   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                    <button type="button" class="pick-btn" id="logoPick">📍 在预览里点击位置</button>
                     <div class="nudge-pad" aria-label="方向键微调">
                       <span class="empty"></span>
                       <button type="button" data-kind="logo" data-dx="0" data-dy="-1" title="上 1mm">▲</button>
@@ -381,6 +347,7 @@
                       <button type="button" class="active" data-delta="1">1 mm</button>
                       <button type="button" data-delta="5">5 mm</button>
                     </div>
+                    <span style="font-size:11.5px;color:var(--muted)">↑↓←→ 键同样可用</span>
                   </div>
                 </div></div>
                 <div class="ctl-row"><span class="label">大小</span><div class="ctrl">
@@ -399,26 +366,8 @@
                 <span class="hint-mini">点击或拖入图片</span>
               </div>
               <div class="brand-controls" id="sealCtrls" style="display:none">
-                <div class="ctl-row"><span class="label">位置</span><div class="ctrl">
-                  <div class="coord-group">
-                    <label>X (mm) <input type="number" id="sealX" min="0" max="300" step="0.5" value="130"></label>
-                    <label>Y (mm) <input type="number" id="sealY" min="0" max="400" step="0.5" value="235"></label>
-                  </div>
-                </div></div>
-                <div class="ctl-row"><span class="label">快捷</span><div class="ctrl">
-                  <div class="preset-row">
-                    <button type="button" class="preset" data-kind="seal" data-pos="tl">左上</button>
-                    <button type="button" class="preset" data-kind="seal" data-pos="tr">右上</button>
-                    <button type="button" class="preset" data-kind="seal" data-pos="cl">左中</button>
-                    <button type="button" class="preset" data-kind="seal" data-pos="cr">右中</button>
-                    <button type="button" class="preset" data-kind="seal" data-pos="bl">左下</button>
-                    <button type="button" class="preset" data-kind="seal" data-pos="br">右下</button>
-                    <button type="button" class="preset" data-kind="seal" data-pos="mid">居中</button>
-                  </div>
-                </div></div>
-                <div class="ctl-row"><span class="label">手动定位</span><div class="ctrl">
+                <div class="ctl-row"><span class="label">微调</span><div class="ctrl">
                   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                    <button type="button" class="pick-btn" id="sealPick">📍 在预览里点击位置</button>
                     <div class="nudge-pad" aria-label="方向键微调">
                       <span class="empty"></span>
                       <button type="button" data-kind="seal" data-dx="0" data-dy="-1" title="上 1mm">▲</button>
@@ -434,6 +383,7 @@
                       <button type="button" class="active" data-delta="1">1 mm</button>
                       <button type="button" data-delta="5">5 mm</button>
                     </div>
+                    <span style="font-size:11.5px;color:var(--muted)">↑↓←→ 键同样可用</span>
                   </div>
                 </div></div>
                 <div class="ctl-row"><span class="label">大小</span><div class="ctrl">
@@ -725,20 +675,8 @@ const BRAND_DEFAULTS={
   logo:{pos:{x:10, y:8},    size:80, layer:'back'},
   seal:{pos:{x:130, y:235}, size:140,layer:'back'}
 };
-// 预设位置（mm）：一键锚定按钮使用
-const POS_PRESETS={
-  'tl':{x:10,  y:10,   label:'左上'},
-  'tr':{x:160, y:10,   label:'右上'},
-  'cl':{x:10,  y:130,  label:'左中'},
-  'cr':{x:155, y:130,  label:'右中'},
-  'bl':{x:10,  y:260,  label:'左下'},
-  'br':{x:155, y:260,  label:'右下'},
-  'mid':{x:80, y:140,  label:'正中'}
-};
 // 手动微调步长（mm），按"1 mm / 5 mm"切换按钮改变
 state.brandStep = { logo: 1, seal: 1 };
-// 当前是否处于「在预览里点击位置」选位模式（按 kind 区分）
-state.brandPick = null;
 function currentCompanyId(){ return state.seller && state.seller.id ? state.seller.id : null; }
 function getBrandStore(){ return load(LS.brand,{}); }
 function getCurrentBrand(){
@@ -873,12 +811,9 @@ function renderBrandUI(){
   const brand=getCurrentBrand();
   ['logo','seal'].forEach(kind=>{
     const drop=$(kind+'Drop'), ctrls=$(kind+'Ctrls'),
-          xEl=$(kind+'X'), yEl=$(kind+'Y'),
           size=$(kind+'Size'), sizeVal=$(kind+'SizeVal'),
-          layer=$(kind+'Layer'),
-          pickBtn=$(kind+'Pick');
+          layer=$(kind+'Layer');
     const data=brand[kind];
-    const pos = (data && data.pos && typeof data.pos.x==='number') ? data.pos : BRAND_DEFAULTS[kind].pos;
     if(!data || !data.dataURL){
       if(drop) drop.classList.remove('has-image');
       const img=drop && drop.querySelector('img'); if(img) img.remove();
@@ -886,7 +821,6 @@ function renderBrandUI(){
         const h=document.createElement('span'); h.className='hint-mini'; h.textContent='点击或拖入图片'; drop.appendChild(h);
       }
       if(ctrls) ctrls.style.display='none';
-      if(pickBtn) pickBtn.classList.remove('active');
     } else {
       if(drop){ drop.classList.add('has-image'); }
       const img=drop && drop.querySelector('img');
@@ -899,12 +833,8 @@ function renderBrandUI(){
         }
       }
       if(ctrls) ctrls.style.display='grid';
-      if(xEl) xEl.value = pos.x;
-      if(yEl) yEl.value = pos.y;
       if(size){ size.value = data.size || BRAND_DEFAULTS[kind].size; if(sizeVal) sizeVal.textContent = (data.size||BRAND_DEFAULTS[kind].size)+' px'; }
       if(layer) layer.value = data.layer || BRAND_DEFAULTS[kind].layer;
-      // pick 模式按钮态
-      if(pickBtn) pickBtn.classList.toggle('active', state.brandPick === kind);
     }
   });
 }
@@ -920,56 +850,12 @@ function nudgeStamp(kind, dx, dy){
   saveBrand(kind, Object.assign({},cur,{pos:{x:newX,y:newY}}));
   renderBrandUI(); renderStamps();
 }
-/* 进入/退出「在预览里点击位置」模式：点击 .doc 把当前 kind 的 stamp 放到该位置 */
-function enterPickMode(kind){
-  if(!getCurrentBrand()[kind] || !getCurrentBrand()[kind].dataURL){
-    toast('请先上传'+ (kind==='logo'?'Logo':'印章'));
-    return;
-  }
-  if(state.brandPick === kind){ exitPickMode(); return; }
-  exitPickMode();
-  state.brandPick = kind;
-  const doc=$('doc'); doc.classList.add('pick-mode');
-  // 浮层提示
-  let hint=doc.querySelector('.pick-hint');
-  if(!hint){ hint=document.createElement('div'); hint.className='pick-hint'; doc.appendChild(hint); }
-  hint.innerHTML='📍 单击预览区域放置'+(kind==='logo'?'Logo':'印章')+'<span>(Esc 取消)</span>';
-  renderBrandUI(); // 高亮 pick 按钮
-  // 单击 .doc 上任何点（不点 stamp 自己）放置
-  const onClick=e=>{
-    if(e.target && e.target.classList && e.target.classList.contains('stamp')) return; // 让 drag 接管
-    const u=docUnit();
-    const docRect=doc.getBoundingClientRect();
-    const px=e.clientX - docRect.left;
-    const py=e.clientY - docRect.top;
-    const mmX=Math.max(0, Math.round((px * u.mmPerPx)*10)/10);
-    const mmY=Math.max(0, Math.round((py * u.mmPerPx)*10)/10);
-    const cur=getCurrentBrand()[kind]||{};
-    saveBrand(kind, Object.assign({},cur,{pos:{x:mmX,y:mmY}}));
-    exitPickMode();
-    renderBrandUI(); renderStamps();
-    toast('已放置到 X='+mmX.toFixed(1)+'mm / Y='+mmY.toFixed(1)+'mm');
-  };
-  state._pickHandler = onClick;
-  doc.addEventListener('click', onClick, true);
-}
-function exitPickMode(){
-  if(!state.brandPick) return;
-  const doc=$('doc');
-  doc.classList.remove('pick-mode');
-  if(state._pickHandler){ doc.removeEventListener('click', state._pickHandler, true); state._pickHandler=null; }
-  const hint=doc.querySelector('.pick-hint'); if(hint) hint.remove();
-  state.brandPick = null;
-  renderBrandUI();
-}
 
 /* UI → state（用户在 UI 里改动，立即写回 store 并刷新预览） */
 function bindBrandControl(kind){
   const drop=$(kind+'Drop'), file=$(kind+'File'),
-        xEl=$(kind+'X'), yEl=$(kind+'Y'),
         size=$(kind+'Size'), sizeVal=$(kind+'SizeVal'),
-        layer=$(kind+'Layer'), removeBtn=$(kind+'Remove'),
-        pickBtn=$(kind+'Pick');
+        layer=$(kind+'Layer'), removeBtn=$(kind+'Remove');
   // 点击 drop 触发文件选择
   if(drop && file){ drop.onclick=()=>file.click(); }
   // 文件选择完成
@@ -1003,25 +889,6 @@ function bindBrandControl(kind){
       const dt=new DataTransfer(); dt.items.add(f); file.files=dt.files; file.dispatchEvent(new Event('change'));
     });
   }
-  // X / Y 数字框
-  if(xEl){ xEl.oninput=()=>{ const v=Math.max(0, parseFloat(xEl.value)||0); const cur=getCurrentBrand()[kind]||BRAND_DEFAULTS[kind]; const pos=cur.pos||BRAND_DEFAULTS[kind].pos; saveBrand(kind, Object.assign({},cur,{pos:{x:v,y:pos.y}})); renderStamps(); }; }
-  if(yEl){ yEl.oninput=()=>{ const v=Math.max(0, parseFloat(yEl.value)||0); const cur=getCurrentBrand()[kind]||BRAND_DEFAULTS[kind]; const pos=cur.pos||BRAND_DEFAULTS[kind].pos; saveBrand(kind, Object.assign({},cur,{pos:{x:pos.x,y:v}})); renderStamps(); }; }
-  // 快捷按钮（一键锚定 7 个常用位置）
-  document.querySelectorAll('.preset[data-kind="'+kind+'"]').forEach(btn=>{
-    btn.onclick=()=>{
-      const preset=POS_PRESETS[btn.dataset.pos]; if(!preset) return;
-      const cur=getCurrentBrand()[kind]||BRAND_DEFAULTS[kind];
-      saveBrand(kind, Object.assign({},cur,{pos:{x:preset.x,y:preset.y}}));
-      renderBrandUI(); renderStamps();
-    };
-  });
-  // 选位模式按钮
-  if(pickBtn){
-    pickBtn.onclick=()=>{
-      if(state.brandPick === kind){ exitPickMode(); }
-      else enterPickMode(kind);
-    };
-  }
   // 数字键方向键盘（▲▼◀▶）+ 1mm/5mm 切换（每个 kind 独立，找最近的 .delta-toggle）
   const card = $(kind+'Ctrls');
   if(card){
@@ -1054,30 +921,15 @@ bindBrandControl('logo');
 bindBrandControl('seal');
 
 /* 全局方向键监听：
-   - pick 模式下：↑↓←→ 微调当前 pick 的 kind；Esc 退出
-   - 非 pick 模式下：↑↓←→ 微调"上一次交互的 kind"（点击过 ▲▼◀▶ 按钮则切换）
+   - 非 pick 模式：↑↓←→ 微调"上一次交互的 kind"（点击过 ▲▼◀▶ 按钮则切换）
    - 在数字输入框聚焦时不接管（让原生方向键数字调整生效）
 */
 document.addEventListener('keydown', e=>{
-  // pick 模式激活
-  if(state.brandPick){
-    if(e.key==='Escape'){ e.preventDefault(); exitPickMode(); toast('已退出选位'); return; }
-    if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){
-      const tag=(document.activeElement||{}).tagName;
-      if(tag==='INPUT') return; // 让输入框接收方向键
-      e.preventDefault();
-      const d={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]}[e.key];
-      nudgeStamp(state.brandPick, d[0], d[1]);
-      return;
-    }
-    return; // pick 模式下非方向键：不响应
-  }
-  // 非 pick 模式：方向键 = 上一次交互的 kind
   const dx = e.key==='ArrowLeft'?-1:e.key==='ArrowRight'?1:0;
   const dy = e.key==='ArrowUp'?-1:e.key==='ArrowDown'?1:0;
   if(!(dx||dy)) return;
   const tag=(document.activeElement||{}).tagName;
-  if(tag==='INPUT') return;
+  if(tag==='INPUT') return; // 让输入框接收方向键
   e.preventDefault();
   const lastKind = state._lastNudgeKind || 'seal';
   nudgeStamp(lastKind, dx, dy);
