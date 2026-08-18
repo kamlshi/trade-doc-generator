@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trade Document Generator 国际贸易单证生成器 · 最终版</title>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --navy:#1a1a2e; --blue:#0f3460; --coral:#e94560; --ink:#1f2430; --muted:#6b7280;
+    --line:#e5e7eb; --bg:#f5f6fa; --card:#fff; --soft:#eef1f7; --ok:#16a34a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.55;font-size:14px}
+  button{font-family:inherit}
+  .navbar{background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;padding:0 22px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:60;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+  .brand{display:flex;align-items:center;gap:12px;padding:13px 0}
+  .brand .logo{background:var(--coral);color:#fff;font-weight:900;padding:6px 11px;border-radius:9px;letter-spacing:1px;font-size:14px}
+  .brand .bt{font-weight:800;font-size:16px}
+  .brand .bt small{font-weight:500;opacity:.8;margin-left:8px;font-size:12px}
+  .nav-menu{display:flex;gap:4px}
+  .nav-menu a{color:#dfe4f2;padding:9px 14px;border-radius:8px;cursor:pointer;font-weight:600;font-size:13.5px;text-decoration:none}
+  .nav-menu a.active{background:rgba(255,255,255,.14);color:#fff}
+  .container{max-width:1180px;margin:0 auto;padding:24px 20px 60px}
+  .page{display:none}.page.active{display:block}
+  .page-header{margin-bottom:18px}
+  .page-header h1{margin:0;font-size:23px;display:flex;align-items:center;gap:10px}
+  .page-header h1 .cn{font-size:15px;color:var(--muted);font-weight:600}
+  .page-header p{margin:6px 0 0;color:var(--muted);font-size:13px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px;box-shadow:0 1px 3px rgba(20,30,60,.04)}
+  .card h3{margin:0 0 14px;font-size:15px;color:var(--navy);display:flex;align-items:center;gap:8px;justify-content:space-between}
+  .card h3 .cn{color:var(--muted);font-size:12px;font-weight:500}
+  .form-row{display:flex;gap:12px;margin-bottom:11px}
+  .form-row>div{flex:1;min-width:0}
+  label{display:block;font-size:11.5px;font-weight:700;color:#374151;margin-bottom:4px}
+  label .en{color:var(--muted);font-weight:500}
+  input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-family:inherit;background:#fff;color:var(--ink)}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(15,52,96,.1)}
+  .btn{border:none;padding:9px 16px;border-radius:9px;cursor:pointer;font-weight:700;font-size:13px;background:var(--soft);color:#374151}
+  .btn:hover{filter:brightness(.97)}
+  .btn-primary{background:var(--navy);color:#fff}
+  .btn-success{background:var(--ok);color:#fff}
+  .btn-coral{background:var(--coral);color:#fff}
+  .btn-sm{padding:6px 12px;font-size:12px}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .layout{display:grid;grid-template-columns:430px 1fr;gap:18px;align-items:start}
+  @media(max-width:980px){.layout{grid-template-columns:1fr}}
+  .table-wrapper{overflow:auto;border:1px solid var(--line);border-radius:10px}
+  table.items{width:100%;border-collapse:collapse;font-size:12.5px}
+  table.items th,table.items td{border-bottom:1px solid var(--line);padding:6px 7px;text-align:left}
+  table.items th{background:var(--soft);color:var(--navy);font-weight:700;white-space:nowrap}
+  table.items input{border:none;background:transparent;padding:4px 3px}
+  table.items input:focus{background:#fffae6;box-shadow:none}
+  table.items tfoot td{font-weight:800;background:#fafbfe}
+  .del-row{color:var(--coral);cursor:pointer;font-weight:800;border:none;background:none;font-size:15px}
+  .badge{display:inline-block;background:var(--soft);color:var(--blue);font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;text-transform:uppercase;letter-spacing:.5px}
+  .preview-card{position:sticky;top:74px}
+  /* preview doc */
+  /* ===== 文档预览：四套公司版式（版式各不相同） ===== */
+  .doc{font-size:12.5px;max-width:760px;margin:0 auto;background:#fff;padding:16px 18px;color:#1a1a1a;line-height:1.5}
+  .doc .lab{font-weight:700;font-size:10px;letter-spacing:.5px;margin-bottom:3px}
+  .doc table.dt{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:8px}
+  .doc table.dt th,.doc table.dt td{padding:5px 7px;vertical-align:top}
+  .doc .tot{font-weight:700}
+  .doc .sign{display:flex;gap:30px;margin-top:26px}
+  .doc .sign div{flex:1;text-align:center;font-style:italic;color:#555;font-size:11px;border-top:1px solid #999;padding-top:6px}
+  .doc .clause{margin:5px 0;font-size:11.5px}
+  .doc .clause .ch{font-weight:700}
+  .doc .clause .ct{white-space:pre-line}
+
+  /* —— 共享信头元素 —— */
+  .lh-logo{width:44px;height:44px;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;font-weight:900;flex:none}
+  .lh-name{font-size:18px;font-weight:900;line-height:1.15}
+  .lh-tag{font-size:9.5px;letter-spacing:1.5px;opacity:.85;margin-top:3px;text-transform:uppercase}
+  .lh-contact{font-size:10px;color:#555;margin-top:3px}
+  .band-co{display:flex;flex-direction:column}
+
+  /* ============ 模板① 经典蓝 · 青龙（衬线字体 / 双线边框 / 居中） ============ */
+  .doc.blue{font-family:"Times New Roman",Georgia,"SimSun",serif;color:#16243f}
+  .doc.blue .frame{border:3px double #143a6b;padding:16px 18px;margin-bottom:10px}
+  .doc.blue .hd-cl{text-align:center;padding:4px 0 8px}
+  .doc.blue .hd-cl .lh-logo{margin:0 auto 8px;background:#e94560}
+  .doc.blue .hd-cl .lh-name{font-size:21px;color:#143a6b}
+  .doc.blue .hd-cl .lh-tag{color:#143a6b}
+  .doc.blue .hd-cl .lh-contact{color:#444}
+  .doc.blue .dbl-rule{height:0;border-top:3px double #143a6b;margin:7px 0}
+  .doc.blue h1.tt.cl{text-align:center;font-size:24px;color:#143a6b;margin:4px 0;letter-spacing:2px}
+  .doc.blue .tt-sub.cl{text-align:center;font-size:11px;letter-spacing:3px;color:#e94560;margin-bottom:8px}
+  .doc.blue .info{display:grid;grid-template-columns:1fr 1fr;gap:0;margin:10px 0}
+  .doc.blue .info .f{padding:6px 9px;border:1px solid #c9ccd6}
+  .doc.blue .info .lab{color:#e94560}
+  .doc.blue .info .fv{white-space:pre-line;font-size:11.5px}
+  .doc.blue table.dt.t-blue th{background:#143a6b;color:#fff}
+  .doc.blue table.dt.t-blue th,.doc.blue table.dt.t-blue td{border:1px solid #c9ccd6}
+  .doc.blue .tot{background:#eef1f6}
+  .doc.blue .clause .ch{color:#143a6b}
+  .doc.blue .bank-box{border:1px solid #143a6b;padding:7px 9px;margin-top:12px;font-size:11px}
+
+  /* ============ 模板② 现代橙 · 赤阳（顶部色带 / 卡片信息 / 无竖线表） ============ */
+  .doc.orange{font-family:"Helvetica Neue","Microsoft YaHei",Arial,sans-serif;color:#2a2118}
+  .doc.orange .band.or{background:#e8590c;color:#fff;padding:12px 16px;display:flex;align-items:center;gap:14px;border-radius:5px 5px 0 0}
+  .doc.orange .band.or .lh-logo{background:#fff;color:#e8590c}
+  .doc.orange .band.or .lh-name{color:#fff;font-size:19px}
+  .doc.orange .band.or .lh-tag{color:#ffe2cc}
+  .doc.orange .band.or .band-contact{margin-left:auto;font-size:9.5px;color:#fff;text-align:right;opacity:.92;max-width:46%}
+  .doc.orange .tt-box.or{margin:12px 0 4px}
+  .doc.orange h1.tt{font-size:23px;color:#e8590c;margin:0;padding-left:12px;border-left:5px solid #e8590c}
+  .doc.orange .tt-sub{font-size:10px;color:#b8430a;padding-left:17px;margin-top:2px;letter-spacing:1px}
+  .doc.orange .info{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+  .doc.orange .info .f{background:#fff6ef;border:1px solid #ffd8bd;border-radius:9px;padding:9px 11px}
+  .doc.orange .info .lab{color:#e8590c}
+  .doc.orange .info .fv{white-space:pre-line;font-size:11.5px}
+  .doc.orange table.dt.t-orange th{background:#e8590c;color:#fff}
+  .doc.orange table.dt.t-orange th,.doc.orange table.dt.t-orange td{border-bottom:1px solid #f0d3bf;padding:6px 7px}
+  .doc.orange table.dt.t-orange td{border-right:none;border-left:none;border-top:none}
+  .doc.orange .tot{background:#fff1e7}
+  .doc.orange .clause .ch{color:#e8590c}
+  .doc.orange .bank-box{background:#fff6ef;border:1px solid #ffd8bd;border-radius:9px;padding:9px 11px;margin-top:12px;font-size:11px}
+
+  /* ============ 模板③ 简约绿 · 青松（大量留白 / 细线 / 定义列表） ============ */
+  .doc.green{font-family:"Helvetica Neue","Microsoft YaHei",Arial,sans-serif;color:#243024}
+  .doc.green .hd-min{display:flex;align-items:center;gap:12px}
+  .doc.green .hd-min .min-logo{width:34px;height:34px;border-radius:50%;background:#2f9e44;color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;flex:none}
+  .doc.green .hd-min .lh-name{color:#243024;font-size:18px;font-weight:800}
+  .doc.green .hd-min .lh-tag{color:#2f9e44;text-transform:none;letter-spacing:.5px;font-size:10px}
+  .doc.green .hd-min .lh-contact{color:#666}
+  .doc.green .min-rule{height:1px;background:#2f9e44;opacity:.5;margin:10px 0}
+  .doc.green h1.tt.min{text-align:left;font-size:19px;color:#2f9e44;letter-spacing:3px;margin:0;font-weight:700}
+  .doc.green .tt-sub.min{text-align:left;font-size:10px;color:#7aa884;letter-spacing:2px;margin-bottom:8px}
+  .doc.green .info{margin:12px 0}
+  .doc.green .info .f{display:grid;grid-template-columns:160px 1fr;gap:10px;padding:5px 0;border-bottom:1px solid #e3efe5}
+  .doc.green .info .lab{color:#2f9e44;font-size:9.5px;padding-top:2px}
+  .doc.green .info .fv{white-space:pre-line;font-size:11.5px;color:#333}
+  .doc.green table.dt.t-green th{background:#eaf6ec;color:#2f9e44}
+  .doc.green table.dt.t-green th,.doc.green table.dt.t-green td{border:none;border-bottom:1px solid #e3efe5;padding:6px 7px}
+  .doc.green .tot{background:#f4faf5}
+  .doc.green .clause .ch{color:#2f9e44}
+  .doc.green .bank-box{border-top:2px solid #2f9e44;padding-top:7px;margin-top:12px;font-size:11px}
+
+  /* ============ 模板④ Second Life · 真实单证版式（左侧公司块+右侧大标题 / 信息网格 / 汇总+逐箱明细 / 签章） ============ */
+  .doc.secondlife{font-family:"Helvetica Neue",Arial,"Microsoft YaHei",sans-serif;color:#1a1a1a;font-size:12px;line-height:1.4}
+  .doc.secondlife .sl-head{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;border-bottom:2px solid #0b6b4f;padding-bottom:9px}
+  .doc.secondlife .sl-co .sl-name{font-size:15px;font-weight:800;color:#0b6b4f}
+  .doc.secondlife .sl-co .sl-line{font-size:10.5px;color:#333;line-height:1.55}
+  .doc.secondlife .sl-co .sl-line.muted{color:#555}
+  .doc.secondlife .sl-title{font-size:22px;font-weight:800;letter-spacing:1px;text-align:right;white-space:nowrap;padding-top:6px;color:#1a1a1a}
+  .doc.secondlife .sl-info{display:grid;grid-template-columns:1fr 1fr;gap:3px 42px;margin:12px 0 4px}
+  .doc.secondlife .sl-pair{display:grid;grid-template-columns:128px 1fr;gap:8px;align-items:start;padding:2px 0}
+  .doc.secondlife .sl-pair .sl-lbl{font-size:9.5px;font-weight:700;color:#0b6b4f;letter-spacing:.3px;padding-top:1px}
+  .doc.secondlife .sl-pair .sl-val{font-size:11.5px;white-space:pre-line}
+  .doc.secondlife .sl-pair.full{grid-column:1 / -1}
+  .doc.secondlife .sl-note{font-size:10.5px;color:#333;margin:1px 0 0;font-style:italic}
+  .doc.secondlife .sl-sec{font-size:12px;font-weight:800;color:#0b6b4f;margin:14px 0 3px;letter-spacing:.4px}
+  .doc.secondlife table.sl-tbl{width:100%;border-collapse:collapse;font-size:10.5px;margin-top:2px}
+  .doc.secondlife table.sl-tbl th{background:#0b6b4f;color:#fff;font-weight:700;padding:4px 6px;text-align:left;border:1px solid #0b6b4f}
+  .doc.secondlife table.sl-tbl td{border:1px solid #c9d8d2;padding:3px 6px;vertical-align:top}
+  .doc.secondlife table.sl-tbl td.r{text-align:right}
+  .doc.secondlife table.sl-tbl tr.tot td{background:#eef7f3;font-weight:700}
+  .doc.secondlife .sl-foot{display:flex;justify-content:space-between;gap:18px;margin-top:9px;font-size:11px}
+  .doc.secondlife .sl-foot .sl-amt{font-size:13px;font-weight:800;color:#0b6b4f}
+  .doc.secondlife .sl-foot .sl-words{font-size:10.5px;color:#444;max-width:62%}
+  .doc.secondlife .sl-grid2{display:grid;grid-template-columns:1fr 1fr;gap:3px 30px;margin-top:8px;font-size:11px}
+  .doc.secondlife .sl-grid2 .g{display:grid;grid-template-columns:130px 1fr;gap:8px}
+  .doc.secondlife .sl-grid2 .g .gl{font-weight:700;color:#0b6b4f;font-size:10px}
+  .doc.secondlife .sl-sign{display:flex;justify-content:space-between;gap:40px;margin-top:32px;font-size:10.5px}
+  .doc.secondlife .sl-sign .col{width:46%}
+  .doc.secondlife .sl-sign .sl-rep{font-weight:700;margin-bottom:22px}
+  .doc.secondlife .sl-sign .sl-co2{font-weight:700}
+  .doc.secondlife .sl-sign .sl-chop{margin:3px 0}
+  .doc.secondlife .sl-sign .sl-date{margin-top:5px}
+  .doc.secondlife .sl-terms{margin:10px 0}
+  .doc.secondlife .sl-terms .t{font-weight:800;color:#0b6b4f;margin-bottom:5px}
+  .doc.secondlife .sl-terms .row{display:grid;grid-template-columns:26px 1fr;gap:8px;padding:2px 0;font-size:11.5px}
+  .doc.secondlife .sl-terms .row .n{font-weight:700;color:#0b6b4f}
+  @media print{
+    body *{visibility:hidden}
+    #previewBox,#previewBox *{visibility:visible}
+    #previewBox{position:absolute;left:0;top:0;width:100%;max-height:none;overflow:visible}
+    .doc{max-width:none!important}
+  }
+
+  /* 表单：模板（公司）指示器 */
+  .tpl-ind{display:flex;align-items:center;gap:9px;padding:9px 11px;border:1px dashed var(--line);border-radius:8px;font-size:13px;font-weight:800;background:var(--soft);color:var(--ink)}
+  .tpl-ind .dot{width:11px;height:11px;border-radius:50%;flex:none}
+
+  .data-table{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:10px;overflow:hidden}
+  .data-table th,.data-table td{border-bottom:1px solid var(--line);padding:10px 12px;text-align:left}
+  .data-table th{background:var(--soft);color:var(--navy);font-weight:700}
+  .link{color:var(--blue);cursor:pointer;font-weight:600}
+  .link:hover{text-decoration:underline}
+  .danger{color:var(--coral)}
+  .modal{position:fixed;inset:0;background:rgba(20,25,40,.5);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+  .modal.show{display:flex}
+  .modal-box{background:#fff;border-radius:14px;max-width:760px;width:100%;max-height:86vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  .modal-head{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff}
+  .modal-head h3{margin:0;font-size:16px;color:var(--navy)}
+  .modal-x{border:none;background:none;font-size:24px;cursor:pointer;color:var(--muted);line-height:1}
+  .modal-body{padding:18px 20px}
+  .modal-foot{padding:14px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
+  .maprow{display:grid;grid-template-columns:1fr 36px 1fr 130px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px dashed var(--line);font-size:13px}
+  .maprow .src{font-family:monospace;background:var(--soft);padding:5px 8px;border-radius:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .maprow .ar{text-align:center;color:var(--coral);font-weight:800}
+  .maprow select{padding:6px 8px}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:11px 20px;border-radius:10px;font-size:13.5px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.25);opacity:0;transition:.25s;z-index:200;pointer-events:none}
+  .toast.show{opacity:1}
+  .hint{font-size:12px;color:var(--muted);background:var(--soft);border-left:3px solid var(--coral);padding:9px 13px;border-radius:8px;margin-top:12px}
+  .empty{text-align:center;color:var(--muted);padding:40px 0;font-size:13px}
+  textarea.paste{width:100%;min-height:110px;border:1px solid var(--line);border-radius:8px;padding:10px;font-family:monospace;font-size:12.5px}
+  @media print{
+    @page{ size:A4; margin:10mm }
+    .navbar,.container>.layout>div:first-child,.action-bar,.page-header p,.nav-menu{display:none !important}
+    body{background:#fff}
+    .container{padding:0}
+    .layout{grid-template-columns:1fr}
+    .preview-card{position:static;box-shadow:none}
+    .card{border:none;box-shadow:none;padding:0}
+    .doc{box-shadow:none}
+    .doc.secondlife .sl-tbl,.doc.secondlife .sl-info{break-inside:avoid}
+    .doc.secondlife .sl-tbl tr,.doc.secondlife .sl-sign .col{break-inside:avoid}
+    .doc *{ -webkit-print-color-adjust:exact; print-color-adjust:exact }
+  }
+</style>
+</head>
+<body>
+
+<div class="navbar">
+  <div class="brand"><span class="logo">TDG</span><span class="bt">Trade Document Generator<small>国际贸易单证生成器 · 最终版</small></span></div>
+  <div class="nav-menu">
+    <a class="active" data-page="gen">单证生成</a>
+    <a data-page="companies">公司管理</a>
+    <a data-page="history">历史记录</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ================= 生成页 ================= -->
+  <section class="page active" id="page-gen">
+    <div class="page-header">
+      <h1>Document Generator <span class="cn">单证生成</span></h1>
+      <p>填写信息或粘贴 Excel/CSV 自动识别字段，实时预览并导出 PDF / Excel。所有数据仅保存在本机浏览器。</p>
+    </div>
+    <div class="layout">
+      <!-- 左：表单 -->
+      <div>
+        <div class="card">
+          <h3>1 · 类型与模板 <span class="cn">Document Type &amp; Template</span></h3>
+          <div class="form-row">
+            <div><label>单证类型 <span class="en">Type</span></label>
+              <select id="docType">
+                <option value="invoice">Commercial INVOICE 商业发票</option>
+                <option value="packing">PACKING LIST 装箱单</option>
+                <option value="contract">SALES CONTRACT 销售合同</option>
+              </select></div>
+            <div><label>模板（公司） <span class="en">Template by Company</span></label>
+              <div id="tplIndicator" class="tpl-ind"><span class="dot" style="background:#1f5fa8"></span><span id="tplName">经典蓝 · 青龙国际贸易</span></div>
+              <div style="font-size:11px;color:var(--muted);margin-top:5px">选择下方卖方公司即自动确认版式</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>2 · 买卖双方 <span class="cn">Parties</span></h3>
+          <div class="form-row">
+            <div><label>卖方（从已存选择）<span class="en">Seller</span></label><select id="sellerSel"></select></div>
+            <div><label>买方（从已存选择）<span class="en">Buyer</span></label><select id="buyerSel"></select></div>
+          </div>
+          <div class="form-row">
+            <div><label>卖方名称 Seller Name</label><input id="seller_name" placeholder="Company name"></div>
+            <div><label>买方名称 Buyer Name</label><input id="buyer_name" placeholder="Company name"></div>
+          </div>
+          <div class="form-row">
+            <div><label>卖方地址 Seller Address</label><input id="seller_address" placeholder="Street, City"></div>
+            <div><label>买方地址 Buyer Address</label><input id="buyer_address" placeholder="Street, City"></div>
+          </div>
+          <div class="form-row">
+            <div><label>卖方国家 Seller Country</label><input id="seller_country" placeholder="Country"></div>
+            <div><label>买方国家 Buyer Country</label><input id="buyer_country" placeholder="Country"></div>
+          </div>
+        </div>
+
+        <div class="card" id="docInfoCard">
+          <h3>3 · 单证信息 <span class="cn">Document Info</span></h3>
+          <div class="form-row">
+            <div><label id="lblDocNo">发票号 Invoice No</label><input id="doc_no" placeholder="e.g. INV-2026-001"></div>
+            <div><label id="lblDocDate">发票日期 Invoice Date</label><input id="doc_date" type="date"></div>
+          </div>
+          <div class="form-row" id="commonTerms">
+            <div><label>付款方式 Payment Terms</label><input id="payment_terms" placeholder="T/T 30% deposit"></div>
+            <div><label>交货条款 Delivery Terms</label><input id="delivery_terms" placeholder="FOB Shanghai"></div>
+          </div>
+          <div class="form-row" id="portRow">
+            <div><label>装运港 Port of Loading</label><input id="pol" placeholder="Shanghai Port"></div>
+            <div><label>目的港 Port of Destination</label><input id="pod" placeholder="Los Angeles"></div>
+          </div>
+          <div class="form-row" id="currencyRow">
+            <div><label>币种 Currency</label>
+              <select id="currency"><option>USD</option><option>EUR</option><option>CNY</option><option>GBP</option><option>JPY</option></select></div>
+            <div></div>
+          </div>
+          <div id="contractExtra" style="display:none">
+            <div class="form-row">
+              <div><label>包装条款 Packing</label><input id="packing" placeholder="In standard export packing"></div>
+              <div><label>唛头 Shipping Mark</label><input id="shipping_mark" placeholder="At seller's option"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" id="bankCard">
+          <h3>4 · 卖方银行 <span class="cn">Bank Information</span></h3>
+          <div class="form-row">
+            <div><label>银行名称 Bank Name</label><input id="bank_name"></div>
+            <div><label>账号 Account No</label><input id="bank_account"></div>
+          </div>
+          <div class="form-row">
+            <div><label>SWIFT Code</label><input id="bank_swift"></div>
+            <div><label>银行地址 Bank Address</label><input id="bank_address"></div>
+          </div>
+        </div>
+
+        <div class="card" id="itemsCard">
+          <h3>5 · 商品明细 <span class="cn">Item Details</span>
+            <span style="font-weight:500">
+              <button class="btn btn-sm btn-coral" id="pasteBtn">粘贴/上传 Excel</button>
+              <button class="btn btn-sm" id="addRowBtn">+ 添加一行</button>
+            </span>
+          </h3>
+          <div class="table-wrapper"><table class="items" id="itemsTable"><thead></thead><tbody></tbody><tfoot></tfoot></table></div>
+        </div>
+
+        <div class="card" id="slInfoCard" style="display:none">
+          <h3>5b · Second Life 专用信息 <span class="cn">SL Document Info</span></h3>
+          <div class="form-row">
+            <div><label>参考合同 Reference Contract</label><input id="reference_contract" placeholder="SC-2026-017"></div>
+            <div><label>价格条款 Price Terms</label><input id="price_terms" placeholder="CIF SHANGHAI, CHINA"></div>
+          </div>
+          <div class="form-row">
+            <div><label>承运人 Carrier</label><input id="carrier" placeholder="CMA CGM"></div>
+            <div><label>船名航次 Vessel / Voyage</label><input id="vessel" placeholder="CMA CGM OSIRIS 0BENOE1MA"></div>
+          </div>
+          <div class="form-row">
+            <div><label>提单号 B/L No.</label><input id="bl_no" placeholder="4055187070"></div>
+            <div><label>箱型 Container Type <span class="en">(装箱单)</span></label><input id="container_type" placeholder="40'HC"></div>
+          </div>
+          <div class="form-row">
+            <div><label>数量基准 Quantity Basis</label><input id="quantity_basis" placeholder="Cells are priced at USD 4.60 per cell."></div>
+            <div><label>大写金额 Amount in Words</label><input id="amount_in_words" placeholder="US Dollars ... Only"></div>
+          </div>
+        </div>
+
+        <div class="card" id="containerCard" style="display:none">
+          <h3>5c · 集装箱明细 <span class="cn">Container Details</span>
+            <span style="font-weight:500">
+              <button class="btn btn-sm" id="addCtrBtn">+ 添加一箱</button>
+            </span>
+          </h3>
+          <div class="table-wrapper"><table class="items" id="containerTable"><thead></thead><tbody></tbody><tfoot></tfoot></table></div>
+        </div>
+
+        <div class="action-bar" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
+          <button class="btn btn-primary" id="pdfBtn">导出 PDF（打印）</button>
+          <button class="btn btn-success" id="excelBtn">导出 Excel</button>
+          <button class="btn" id="saveBtn">保存草稿</button>
+        </div>
+      </div>
+
+      <!-- 右：预览 -->
+      <div class="card preview-card">
+        <h3>实时预览 <span class="cn">Live Preview</span><span class="badge" id="pvBadge">INVOICE</span></h3>
+        <div id="previewBox" style="max-height:74vh;overflow:auto"><div class="doc blue" id="doc"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 公司管理 ================= -->
+  <section class="page" id="page-companies">
+    <div class="page-header">
+      <h1>Company Management <span class="cn">公司管理</span></h1>
+      <p>保存常用买卖方信息，生成单证时可一键带入。数据存于本机浏览器。</p>
+      <button class="btn btn-primary" id="addCompanyBtn">+ 添加公司</button>
+    </div>
+    <div class="card"><div class="table-wrapper">
+      <table class="data-table" id="companiesTable"><thead><tr>
+        <th>名称 Name</th><th>类型 Type</th><th>版式 Tpl</th><th>国家 Country</th><th>电话 Phone</th><th>银行 Bank</th><th>操作</th>
+      </tr></thead><tbody></tbody></table>
+    </div></div>
+  </section>
+
+  <!-- ================= 历史记录 ================= -->
+  <section class="page" id="page-history">
+    <div class="page-header">
+      <h1>Document History <span class="cn">历史记录</span></h1>
+      <p>已保存的单证草稿，可重新载入继续编辑或导出。</p>
+    </div>
+    <div class="card"><div class="table-wrapper">
+      <table class="data-table" id="historyTable"><thead><tr>
+        <th>单证号 No</th><th>类型 Type</th><th>模板</th><th>卖方</th><th>买方</th><th>保存时间</th><th>操作</th>
+      </tr></thead><tbody></tbody></table>
+    </div></div>
+  </section>
+</div>
+
+<!-- 字段识别弹窗 -->
+<div class="modal" id="recoModal">
+  <div class="modal-box">
+    <div class="modal-head"><h3>字段识别 · Field Recognition</h3><button class="modal-x" data-close="recoModal">×</button></div>
+    <div class="modal-body">
+      <p style="margin-top:0;font-size:13px;color:#4b5563">粘贴 Excel 内容，或点击“上传文件”直接选择 .xlsx/.csv；系统自动识别表头并映射到标准字段。若当前模板为 Second Life，集装箱级列（箱号/封号/品名/托盘/箱数/数量/单价等）将导入为<b>集装箱明细</b>，表头字段（发票号/买卖方/港口等）回填表单。</p>
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+        <input type="file" id="recoFile" accept=".xlsx,.xls,.csv" style="font-size:12.5px">
+        <button class="btn btn-sm" id="recoLoadFile">上传文件读取 →</button>
+      </div>
+      <textarea class="paste" id="pasteArea" placeholder="品名	数量	单位	单价	毛重&#9;唛头&#10;Cotton T-Shirt	1200	PCS	3.5	240	N/M"></textarea>
+      <div style="margin:12px 0"><button class="btn btn-primary btn-sm" id="recoRun">识别字段 →</button></div>
+      <div id="recoResult" style="display:none">
+        <div class="maprow" style="border:none;font-weight:700;color:var(--navy)">
+          <div>表格列 Excel Column</div><div></div><div>映射为 Mapped To</div><div>示例 Sample</div></div>
+        <div id="recoMapList"></div>
+      </div>
+    </div>
+    <div class="modal-foot" id="recoFoot" style="display:none">
+      <button class="btn" data-close="recoModal">取消</button>
+      <button class="btn btn-primary" id="recoImport">确认导入</button>
+    </div>
+  </div>
+</div>
+
+<!-- 公司编辑弹窗 -->
+<div class="modal" id="companyModal">
+  <div class="modal-box" style="max-width:620px">
+    <div class="modal-head"><h3 id="companyModalTitle">添加公司</h3><button class="modal-x" data-close="companyModal">×</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="c_id">
+      <div class="form-row">
+        <div><label>公司名称 * Name</label><input id="c_name"></div>
+        <div><label>类型 Type</label><select id="c_type"><option value="seller">卖方 Seller</option><option value="buyer">买方 Buyer</option><option value="both">两者 Both</option></select></div>
+      </div>
+      <div class="form-row">
+        <div><label>公司版式 Template</label><select id="c_template"><option value="blue">经典蓝 · 青龙国际贸易</option><option value="orange">现代橙 · 赤阳科技</option><option value="green">简约绿 · 青松制造</option><option value="secondlife">Second Life · 2nd Life</option></select></div>
+        <div><label>信头字母 Logo</label><input id="c_logo" maxlength="2" placeholder="如 青 / A"></div>
+      </div>
+      <div class="form-row">
+        <div><label>信头副标题 Tag</label><input id="c_tag" placeholder="INTERNATIONAL TRADE · 国际贸易"></div>
+        <div></div>
+      </div>
+      <div class="form-row">
+        <div><label>信头联系行 Contact</label><input id="c_contact" placeholder="Tel. ... · email · web"></div>
+        <div></div>
+      </div>
+      <div class="form-row">
+        <div><label>地址 Address</label><input id="c_address"></div>
+        <div><label>国家 Country</label><input id="c_country"></div>
+      </div>
+      <div class="form-row">
+        <div><label>电话 Phone</label><input id="c_phone"></div>
+        <div><label>邮箱 Email</label><input id="c_email"></div>
+      </div>
+      <div class="form-row">
+        <div><label>电话2 Tel2</label><input id="c_phone2"></div>
+        <div><label>传真 Fax</label><input id="c_fax"></div>
+      </div>
+      <div class="form-row">
+        <div><label>网址 Web</label><input id="c_web"></div>
+        <div></div>
+      </div>
+      <div class="form-row">
+        <div><label>银行名称 Bank Name</label><input id="c_bank_name"></div>
+        <div><label>账号 Account</label><input id="c_bank_account"></div>
+      </div>
+      <div class="form-row">
+        <div><label>SWIFT</label><input id="c_bank_swift"></div>
+        <div><label>银行地址 Bank Address</label><input id="c_bank_address"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" data-close="companyModal">取消</button>
+      <button class="btn btn-primary" id="companySave">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ 状态 ============ */
+const $ = id => document.getElementById(id);
+const LS = { companies:'tdg_companies', history:'tdg_history' };
+let state = { items:[], containers:[], mapping:null, rawRows:null, template:'blue', seller:null, buyer:null };
+const TEMPLATE_LABELS = { blue:'经典蓝', orange:'现代橙', green:'简约绿', secondlife:'Second Life' };
+function updateTplIndicator(){
+  const map={blue:['经典蓝 · 青龙国际贸易','#1f5fa8'],orange:['现代橙 · 赤阳科技','#e8590c'],green:['简约绿 · 青松制造','#2f9e44'],secondlife:['Second Life · 2nd Life Solutions','#0b6b4f']};
+  const t=state.template||'blue'; const m=map[t]||map.blue;
+  const ind=$('tplIndicator'); if(!ind)return;
+  ind.querySelector('.dot').style.background=m[1];
+  $('tplName').textContent=m[0];
+}
+function tplHeader(d, title, sub){
+  const name=d.seller_name||'YOUR COMPANY NAME';
+  const logo=(d.seller_logo)|| (name&&name.trim()?name.trim().charAt(0):'★');
+  const tag=d.seller_tag||''; const contact=d.seller_contact||'';
+  if(d.template==='orange'){
+    return `<div class="band or"><div class="lh-logo">${esc(logo)}</div><div class="band-co"><div class="lh-name">${esc(name)}</div>${tag?`<div class="lh-tag">${esc(tag)}</div>`:''}</div>${contact?`<div class="band-contact">${esc(contact)}</div>`:''}</div><div class="tt-box or"><h1 class="tt">${title}</h1>${sub?`<div class="tt-sub">${sub}</div>`:''}</div>`;
+  }
+  if(d.template==='secondlife'){
+    return `<div class="band sl"><div class="band-row"><div class="lh-logo">${esc(logo)}</div><div class="band-co"><div class="lh-name">${esc(name)}</div>${tag?`<div class="lh-tag">${esc(tag)}</div>`:''}</div></div>${contact?`<div class="band-contact">${esc(contact)}</div>`:''}</div><div class="tt-box sl"><h1 class="tt">${title}</h1>${sub?`<div class="tt-sub">${sub}</div>`:''}</div>`;
+  }
+  if(d.template==='green'){
+    return `<div class="hd-min"><div class="min-logo">${esc(logo)}</div><div><div class="lh-name">${esc(name)}</div>${tag?`<div class="lh-tag">${esc(tag)}</div>`:''}${contact?`<div class="lh-contact">${esc(contact)}</div>`:''}</div></div><div class="min-rule"></div><h1 class="tt min">${title}</h1>${sub?`<div class="tt-sub min">${sub}</div>`:''}`;
+  }
+  // blue classic
+  return `<div class="hd-cl"><div class="lh-logo">${esc(logo)}</div><div class="lh-name">${esc(name)}</div>${tag?`<div class="lh-tag">${esc(tag)}</div>`:''}${contact?`<div class="lh-contact">${esc(contact)}</div>`:''}</div><div class="dbl-rule"></div><h1 class="tt cl">${title}</h1>${sub?`<div class="tt-sub cl">${sub}</div>`:''}<div class="dbl-rule"></div>`;
+}
+function tplInfo(d, type){
+  let flds=[];
+  if(type==='invoice'){
+    flds=[
+      ['SELLER / EXPORTER', [d.seller_name,d.seller_address,d.seller_country]],
+      ['INVOICE INFORMATION', ['Invoice No: '+(d.doc_no||''),'Date: '+(d.doc_date||''),'Payment: '+(d.payment_terms||''),'Delivery: '+(d.delivery_terms||''),'Currency: '+(d.currency||'')]],
+      ['BUYER / IMPORTER', [d.buyer_name,d.buyer_address,d.buyer_country]],
+      ['SHIPPING', ['Loading: '+(d.pol||''),'Destination: '+(d.pod||'')]]
+    ];
+  } else {
+    flds=[
+      ['SELLER / EXPORTER', [d.seller_name,d.seller_address]],
+      ['INFORMATION', ['Invoice No: '+(d.doc_no||''),'Date: '+(d.doc_date||''),'Payment: '+(d.payment_terms||'')]],
+      ['BUYER / CONSIGNEE', [d.buyer_name,d.buyer_address]],
+      ['', ['']]
+    ];
+  }
+  const inner=flds.map(f=>{
+    const lines=(f[1]||[]).filter(x=>x!=null).map(x=>esc(x)).join('\n');
+    return `<div class="f"><div class="lab">${f[0]}</div><div class="fv">${lines||'&nbsp;'}</div></div>`;
+  }).join('');
+  return `<div class="info info-${d.template}">${inner}</div>`;
+}
+function seedCompanies(){
+  const seeds=[
+    {id:'seed-blue',name:'青龙国际贸易有限公司',type:'both',address:'No.88 Renmin Rd, Shanghai',country:'China',phone:'+86 21 8888 0001',email:'sales@azure-dragon.com',bank_name:'Bank of China Shanghai Branch',bank_account:'USD 6217 0000 1234 5678',bank_swift:'BKCHCNBJ',bank_address:'Shanghai, China',template:'blue',logo:'青',tag:'INTERNATIONAL TRADE · 国际贸易'},
+    {id:'seed-orange',name:'赤阳科技有限公司',type:'both',address:'No.15 Hi-Tech Ave, Shenzhen',country:'China',phone:'+86 755 6666 0002',email:'trade@crimson-sun.com',bank_name:'ICBC Shenzhen',bank_account:'CNY 6222 0000 2222 8888',bank_swift:'ICBKCNBJ',bank_address:'Shenzhen, China',template:'orange',logo:'赤',tag:'TECHNOLOGY · 科技'},
+    {id:'seed-green',name:'青松制造厂',type:'both',address:'No.200 Industrial Park, Ningbo',country:'China',phone:'+86 574 5555 0003',email:'export@green-pine.com',bank_name:'Agricultural Bank Ningbo',bank_account:'USD 6228 0000 3333 9999',bank_swift:'ABOCCNBJ',bank_address:'Ningbo, China',template:'green',logo:'松',tag:'MANUFACTURING · 制造'}
+  ];
+  save(LS.companies,seeds);
+}
+function ensureCompany(obj){
+  const cs=load(LS.companies,[]);
+  if(!cs.find(x=>x.id===obj.id)){ cs.push(obj); save(LS.companies,cs); }
+}
+
+function load(k,def){ try{ return JSON.parse(localStorage.getItem(k))||def; }catch(e){ return def; } }
+function save(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),1900); }
+
+/* ============ 字段识别字典（源自原项目 fieldMapper.js） ============ */
+const DICT = {
+  invoice_no:['invoice no','invoice number','invoice #','发票号','发票号码','inv no','inv. no'],
+  invoice_date:['invoice date','date','发票日期','日期','inv date'],
+  seller:['seller','exporter','shipper','beneficiary','卖方','出口商','发货人','受益人'],
+  buyer:['buyer','importer','consignee','applicant','买方','进口商','收货人','申请人'],
+  payment_terms:['payment terms','terms of payment','付款方式','支付条款','payment'],
+  delivery_terms:['delivery terms','trade terms','incoterms','价格条款','交货条款','贸易术语'],
+  port_of_loading:['port of loading','pol','loading port','装运港','起运港','装货港'],
+  port_of_destination:['port of destination','pod','destination port','discharge port','目的港','卸货港'],
+  currency:['currency','curr','币种','货币'],
+  description:['description','goods description','product description','commodity','item description','商品名称','品名','货物描述','产品描述','货品名称'],
+  quantity:['quantity','qty','数量'], unit_price:['unit price','price','unit cost','单价','价格'],
+  amount:['amount','total','line total','subtotal','金额','总价','小计'], unit:['unit','uom','unit of measure','单位','计量单位'],
+  marks_numbers:['marks & numbers','marks and numbers','marks','shipping marks','唛头','运输标志','标记及号码'],
+  gross_weight:['gross weight','g.w.','gw','毛重'], net_weight:['net weight','n.w.','nw','净重'],
+  measurement:['measurement','meas.','cbm','volume','体积','尺码'], packages:['packages','pkgs','cartons','number of packages','件数','箱数','包装数量'],
+  contract_no:['contract no','contract number','contract #','合同号','合同编号'],
+  contract_date:['contract date','合同日期','签约日期'],
+  packing:['packing','packing terms','包装','包装条款'], shipping_mark:['shipping mark','ship mark','运输标志','唛头'],
+  insurance:['insurance','保险','保险条款'], inspection:['inspection','检验','检验条款'],
+  force_majeure:['force majeure','不可抗力'], arbitration:['arbitiation','仲裁','仲裁条款'],
+  cn:['cn','cntr','container','箱号'],
+  container_no:['container no','container number','container #','集装箱号','柜号','箱号'],
+  seal_no:['seal no','seal number','封号','封条号'],
+  packing_basis:['packing basis','packing','装箱','装箱方式'],
+  pallets:['pallets','pallet','托盘','卡板'],
+  boxes:['boxes','box','cartons','箱数','纸箱数']
+};
+function similarity(a,b){ if(a===b) return 1; if(a.includes(b)||b.includes(a)) return .85;
+  const sa=new Set(a),sb=new Set(b); let c=0; sa.forEach(ch=>{if(sb.has(ch))c++}); return c/Math.max(sa.size,sb.size); }
+function autoMap(headers){
+  const map={}, used=new Set();
+  headers.forEach(h=>{
+    const n=String(h).toLowerCase().trim(); let best=null,score=0;
+    for(const [t,syns] of Object.entries(DICT)){
+      for(const s of syns){ const sc=similarity(n,s.toLowerCase());
+        if(sc>score && !used.has(t)){score=sc;best=t;}
+        if(n===s.toLowerCase()){best=t;score=1;break;} }
+      if(score===1) break;
+    }
+    if(best && score>=0.5){map[h]=best;used.add(best);} else map[h]=null;
+  });
+  return map;
+}
+
+/* ============ 商品明细列定义 ============ */
+const COLS = {
+  invoice:[['description','品名 Description'],['quantity','数量 Qty'],['unit','单位 Unit'],['unit_price','单价 Unit Price']],
+  packing:[['marks_numbers','唛头 Marks'],['description','品名 Description'],['packages','件数 Pkgs'],['gross_weight','毛重 G.W(kg)'],['net_weight','净重 N.W(kg)'],['measurement','体积 CBM']],
+  contract:[['description','品名 Description'],['quantity','数量 Qty'],['unit','单位 Unit'],['unit_price','单价 Unit Price']]
+};
+function blankItem(){ return {description:'',quantity:'',unit:'',unit_price:'',marks_numbers:'',packages:'',gross_weight:'',net_weight:'',measurement:''}; }
+function blankContainer(){ return {cn:'',container_no:'',seal_no:'',description:'',packing_basis:'',pallets:'',boxes:'',quantity:'',unit_price:'',measurement:'',nw:'',gw:''}; }
+/* 集装箱明细列（Second Life 专用） */
+const CTR_COLS=[['cn','箱号 CNTR'],['container_no','箱号 Container No'],['seal_no','封号 Seal No'],['description','品名 Description'],
+  ['packing_basis','装箱 Packing Basis'],['pallets','托盘 Pallets'],['boxes','箱数 Boxes'],['quantity','数量 Qty'],
+  ['unit_price','单价 Unit Price'],['measurement','体积 CBM'],['nw','净重 N.W(kg)'],['gw','毛重 G.W(kg)']];
+function qnum(s){ return parseFloat(String(s||'').replace(/[^0-9.]/g,''))||0; }
+function rateOf(c){ return parseFloat(String(c.unit_price||'').replace(/[^0-9.]/g,''))||0; }
+function money(v){ return (parseFloat(v)||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function num(v){ return (parseFloat(v)||0).toLocaleString('en-US'); }
+function cSum(f){ return state.containers.reduce((s,c)=>s+(f==='quantity'?qnum(c[f]):(parseFloat(c[f])||0)),0); }
+function totalAmt(){ return state.containers.reduce((s,c)=>s+qnum(c.quantity)*rateOf(c),0); }
+function cGroups(){ const m={}; state.containers.forEach(c=>{ const k=(c.description||'—').trim(); (m[k]=m[k]||[]).push(c); }); return m; }
+
+function renderItemsTable(){
+  const type=$('docType').value, cols=COLS[type];
+  let head=''; cols.forEach(c=>head+=`<th>${c[1]}</th>`); head+='<th></th>';
+  $('itemsTable').querySelector('thead').innerHTML=`<tr>${head}</tr>`;
+  const tb=$('itemsTable').querySelector('tbody'); tb.innerHTML='';
+  state.items.forEach((it,idx)=>{
+    const tr=document.createElement('tr');
+    cols.forEach(c=>{
+      const td=document.createElement('td');
+      const inp=document.createElement('input'); inp.value=it[c[0]]||'';
+      inp.oninput=e=>{ state.items[idx][c[0]]=e.target.value; renderPreview(); };
+      td.appendChild(inp); tr.appendChild(td);
+    });
+    const td=document.createElement('td');
+    const b=document.createElement('button'); b.className='del-row'; b.textContent='×';
+    b.onclick=()=>{ state.items.splice(idx,1); renderItemsTable(); renderPreview(); };
+    td.appendChild(b); tr.appendChild(td); tb.appendChild(tr);
+  });
+  // 合计行（表格共 cols.length+1 列：数据列 + 删除列）
+  let html='';
+  if(type==='invoice'||type==='contract'){
+    const total=state.items.reduce((s,it)=>s+(parseFloat(it.quantity)||0)*(parseFloat(it.unit_price)||0),0);
+    html=`<tr class="tot"><td colspan="${cols.length-1}" style="text-align:right">TOTAL 合计</td>`+
+         `<td style="text-align:right;color:var(--coral)">${total.toFixed(2)}</td><td></td></tr>`;
+  } else {
+    const tp=sum('packages'),tg=sum('gross_weight'),tn=sum('net_weight'),tm=sum('measurement');
+    const vals=[tp,tg.toFixed(2),tn.toFixed(2),tm.toFixed(3)];
+    let cells=''; vals.forEach(v=>cells+=`<td style="text-align:right">${v}</td>`);
+    html=`<tr class="tot"><td colspan="2" style="text-align:right">TOTAL 合计</td>${cells}<td></td></tr>`;
+  }
+  $('itemsTable').querySelector('tfoot').innerHTML=html;
+}
+function sum(f){ return state.items.reduce((s,it)=>s+(parseFloat(it[f])||0),0); }
+
+/* ============ 集装箱明细编辑器（Second Life 专用） ============ */
+function renderContainerTable(){
+  if(!$('containerTable')) return;
+  let head=''; CTR_COLS.forEach(c=>head+=`<th>${c[1]}</th>`); head+='<th></th>';
+  $('containerTable').querySelector('thead').innerHTML=`<tr>${head}</tr>`;
+  const tb=$('containerTable').querySelector('tbody'); tb.innerHTML='';
+  state.containers.forEach((it,idx)=>{
+    const tr=document.createElement('tr');
+    CTR_COLS.forEach(c=>{
+      const td=document.createElement('td');
+      const inp=document.createElement('input'); inp.value=it[c[0]]||'';
+      inp.oninput=e=>{ state.containers[idx][c[0]]=e.target.value; renderPreview(); };
+      td.appendChild(inp); tr.appendChild(td);
+    });
+    const td=document.createElement('td');
+    const b=document.createElement('button'); b.className='del-row'; b.textContent='×';
+    b.onclick=()=>{ state.containers.splice(idx,1); renderContainerTable(); renderPreview(); };
+    td.appendChild(b); tr.appendChild(td); tb.appendChild(tr);
+  });
+  const sums=['pallets','boxes','quantity','nw','gw'].map(f=>`<td style="text-align:right">${num(cSum(f))}</td>`).join('');
+  $('containerTable').querySelector('tfoot').innerHTML=`<tr class="tot"><td colspan="5" style="text-align:right">TOTAL 合计</td>${sums}<td></td></tr>`;
+}
+function updateSLSections(){
+  const isSL=state.template==='secondlife';
+  if($('slInfoCard')) $('slInfoCard').style.display=isSL?'block':'none';
+  if($('containerCard')) $('containerCard').style.display=isSL?'block':'none';
+  if($('itemsCard')) $('itemsCard').style.display=isSL?'none':'block';
+  if(isSL) renderContainerTable();
+}
+function prefillSecondLife(){
+  const set=(id,v)=>{ if($(id) && !$(id).value) $(id).value=v; };
+  set('reference_contract','SC-202605-017'); set('price_terms','CIF SHANGHAI, CHINA');
+  set('carrier','OOCL'); set('vessel','CMA CGM OSIRIS 0BENOE1MA');
+  set('bl_no','OOLU4055187070'); set('container_type',"40'HQ");
+  set('amount_in_words','US Dollars One Hundred Thirty Thousand Five Hundred Fifteen and Twenty Cents Only');
+  if($('doc_no') && !$('doc_no').value){
+    const t=$('docType').value;
+    $('doc_no').value = t==='invoice'?'INV-202605-017':t==='packing'?'PL-202605-017':'SC-202605-017';
+  }
+  if(state.containers.length===0){
+    state.containers=[
+      {cn:'CNTR 74',container_no:'OOCU9444603',seal_no:'8496',description:'UN 3480 Lithium-ion Battery Cell - 9,(E), HS CODE 8507600090',packing_basis:'40 pallets x 16 boxes x 16 cells',pallets:'40',boxes:'640',quantity:'10,240 cells',unit_price:'USD 4.60 / cell',measurement:'46.95',nw:'10956.8',gw:'13200'},
+      {cn:'CNTR 75',container_no:'OOLU9650410',seal_no:'010810',description:'UN 3480 Lithium-ion Battery Cell - 9,(E), HS CODE 8507600090',packing_basis:'40 pallets x 16 boxes x 16 cells',pallets:'40',boxes:'640',quantity:'10,240 cells',unit_price:'USD 4.60 / cell',measurement:'46.95',nw:'10956.8',gw:'13200'},
+      {cn:'CNTR 76',container_no:'BMOU5321710',seal_no:'010983',description:'UN 3480 Lithium-ion Battery Cell - 9,(E), HS CODE 8507600090',packing_basis:'27 pallets x 16 boxes x 16 cells',pallets:'27',boxes:'432',quantity:'6,912 cells',unit_price:'USD 4.60 / cell',measurement:'31.69',nw:'7395.84',gw:'8910'},
+      {cn:'CNTR 76',container_no:'BMOU5321710',seal_no:'010983',description:'UN 3480 Lithium-ion Battery Module - 9,(E), HS CODE 8507600090',packing_basis:'2 pallets x 20 boxes x 1 module/box (24 cells/module)',pallets:'2',boxes:'40',quantity:'40 modules',unit_price:'USD 112.80 / module',measurement:'2.35',nw:'1212.56',gw:'1390'}
+    ];
+  }
+}
+
+/* ============ 预览渲染 ============ */
+function g(){ const c=state.seller||{}; return {
+  docType:$('docType').value, template:state.template,
+  seller_logo:c.logo||'', seller_tag:c.tag||'', seller_contact:c.contact||'',
+  seller_tel:c.phone||'', seller_tel2:c.phone2||'', seller_fax:c.fax||'', seller_web:c.web||'', seller_email:c.email||'',
+  doc_no:$('doc_no').value, doc_date:$('doc_date').value,
+  seller_name:$('seller_name').value, buyer_name:$('buyer_name').value,
+  seller_address:$('seller_address').value, buyer_address:$('buyer_address').value,
+  seller_country:$('seller_country').value, buyer_country:$('buyer_country').value,
+  payment_terms:$('payment_terms').value, delivery_terms:$('delivery_terms').value,
+  pol:$('pol').value, pod:$('pod').value, currency:$('currency').value,
+  packing:$('packing').value, shipping_mark:$('shipping_mark').value,
+  bank_name:$('bank_name').value, bank_account:$('bank_account').value,
+  bank_swift:$('bank_swift').value, bank_address:$('bank_address').value,
+  reference_contract:$('reference_contract').value, price_terms:$('price_terms').value,
+  carrier:$('carrier').value, vessel:$('vessel').value, bl_no:$('bl_no').value,
+  container_type:$('container_type').value, quantity_basis:$('quantity_basis').value, amount_in_words:$('amount_in_words').value
+};}
+function renderPreview(){
+  const d=g(); const doc=$('doc'); doc.className='doc '+d.template;
+  $('pvBadge').textContent=d.docType.toUpperCase();
+  if(d.template==='secondlife'){ doc.innerHTML=renderSecondLife(d); return; }
+  const T={invoice:['COMMERCIAL INVOICE','商业发票'],packing:['PACKING LIST','装箱单'],contract:['SALES CONTRACT','销售合同']};
+  const head=tplHeader(d,T[d.docType][0],T[d.docType][1]);
+  const items=state.items;
+  let body='';
+  if(d.docType==='invoice'){
+    let rows='',total=0;
+    items.forEach((it,i)=>{ const amt=(+it.quantity||0)*(+it.unit_price||0); total+=amt;
+      rows+=`<tr><td>${i+1}</td><td>${esc(it.description)}</td><td style="text-align:right">${it.quantity}</td><td>${it.unit}</td><td style="text-align:right">${it.unit_price}</td><td style="text-align:right">${amt.toFixed(2)}</td></tr>`; });
+    for(let i=items.length;i<4;i++) rows+=`<tr><td>${i+1}</td><td></td><td></td><td></td><td></td><td></td></tr>`;
+    body=`${head}${tplInfo(d,'invoice')}
+    <table class="dt t-${d.template}"><tr><th>No.</th><th>Description</th><th>Qty</th><th>Unit</th><th>Unit Price</th><th>Amount</th></tr>${rows}
+    <tr class="tot"><td colspan="5" style="text-align:right">TOTAL AMOUNT</td><td style="text-align:right;color:var(--coral)">${total.toFixed(2)}</td></tr></table>
+    ${d.bank_name?`<div class="bank-box"><div class="lab">BANK INFORMATION</div>Bank: ${esc(d.bank_name)} &nbsp; Acc: ${esc(d.bank_account)} &nbsp; SWIFT: ${esc(d.bank_swift)}<br>${esc(d.bank_address)}</div>`:''}
+    <div class="sign"><div>Authorized Signature</div><div>Company Stamp</div></div>`;
+  } else if(d.docType==='packing'){
+    let rows='',tp=0,tg=0,tn=0,tm=0;
+    items.forEach((it,i)=>{ tp+=(+it.packages||0);tg+=(+it.gross_weight||0);tn+=(+it.net_weight||0);tm+=(+it.measurement||0);
+      rows+=`<tr><td>${i+1}</td><td>${esc(it.marks_numbers)}</td><td>${esc(it.description)}</td><td style="text-align:right">${it.packages}</td><td style="text-align:right">${it.gross_weight}</td><td style="text-align:right">${it.net_weight}</td><td style="text-align:right">${it.measurement}</td></tr>`; });
+    for(let i=items.length;i<4;i++) rows+=`<tr><td>${i+1}</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
+    body=`${head}${tplInfo(d,'packing')}
+    <table class="dt t-${d.template}"><tr><th>No.</th><th>Marks &amp; Nos</th><th>Description</th><th>Pkgs</th><th>G.W</th><th>N.W</th><th>CBM</th></tr>${rows}
+    <tr class="tot"><td colspan="3">TOTAL</td><td style="text-align:right">${tp}</td><td style="text-align:right">${tg.toFixed(2)}</td><td style="text-align:right">${tn.toFixed(2)}</td><td style="text-align:right">${tm.toFixed(3)}</td></tr></table>
+    <div class="sign"><div>Authorized Signature</div><div>Company Stamp</div></div>`;
+  } else {
+    let rows='',total=0;
+    items.forEach((it,i)=>{ const amt=(+it.quantity||0)*(+it.unit_price||0); total+=amt;
+      rows+=`<tr><td>${i+1}</td><td>${esc(it.description)}</td><td style="text-align:right">${it.quantity}</td><td>${it.unit}</td><td style="text-align:right">${it.unit_price}</td><td style="text-align:right">${amt.toFixed(2)}</td></tr>`; });
+    for(let i=items.length;i<4;i++) rows+=`<tr><td>${i+1}</td><td></td><td></td><td></td><td></td><td></td></tr>`;
+    body=`${head}
+    <div style="text-align:center;font-weight:700">Contract No: ${esc(d.doc_no)} &nbsp;&nbsp; Date: ${esc(d.doc_date)}</div><br>
+    <div class="clause"><span class="ch">THE SELLER:</span> <span class="ct">${esc(d.seller_name)}\n${esc(d.seller_address)} ${esc(d.seller_country)}</span></div>
+    <div class="clause"><span class="ch">THE BUYER:</span> <span class="ct">${esc(d.buyer_name)}\n${esc(d.buyer_address)} ${esc(d.buyer_country)}</span></div>
+    <div class="clause"><span class="ch">5. DELIVERY TERMS:</span> <span class="ct">${esc(d.delivery_terms)}</span></div>
+    <div class="clause"><span class="ch">6. PAYMENT TERMS:</span> <span class="ct">${esc(d.payment_terms)}</span></div>
+    <div class="clause"><span class="ch">7. PACKING:</span> <span class="ct">${esc(d.packing)||'In standard export packing.'}</span></div>
+    <div class="clause"><span class="ch">8. SHIPPING MARK:</span> <span class="ct">${esc(d.shipping_mark)||"At seller's option."}</span></div>
+    <div class="clause"><span class="ch">9. PORT OF LOADING:</span> <span class="ct">${esc(d.pol)}</span></div>
+    <div class="clause"><span class="ch">10. PORT OF DESTINATION:</span> <span class="ct">${esc(d.pod)}</span></div>
+    <div class="clause"><span class="ch">GOODS DETAILS</span></div>
+    <table class="dt t-${d.template}"><tr><th>No.</th><th>Description</th><th>Quantity</th><th>Unit Price</th><th>Amount</th></tr>${rows}
+    <tr class="tot"><td colspan="4" style="text-align:right">TOTAL</td><td style="text-align:right;color:var(--coral)">${total.toFixed(2)}</td></tr></table>
+    <div class="sign"><div>THE SELLER</div><div>THE BUYER</div></div>`;
+  }
+  doc.innerHTML=(d.template==='blue'?'<div class="frame">':'')+body+(d.template==='blue'?'</div>':'');
+}
+function esc(s){ return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+/* ============ Second Life 真实版式渲染 ============ */
+function slTitle(type){ return type==='invoice'?'COMMERCIAL INVOICE':type==='packing'?'PACKING LIST':'SALES CONTRACT'; }
+function slParty(d, who){
+  const name = who==='seller'? d.seller_name : d.buyer_name;
+  const addr = (who==='seller'? d.seller_address+' ' : d.buyer_address+' ') + (who==='seller'? d.seller_country : d.buyer_country);
+  return esc(name||'') + (addr.trim()? '\n'+esc(addr.trim()) : '');
+}
+function slInfo(d){
+  const pair=(l,v,full)=>`<div class="sl-pair${full?' full':''}"><div class="sl-lbl">${l}</div><div class="sl-val">${esc(v)||'&nbsp;'}</div></div>`;
+  const seller=slParty(d,'seller'), buyer=slParty(d,'buyer');
+  if(d.docType==='contract'){
+    return `<div class="sl-info">
+      ${pair('Contract No.', d.doc_no)} ${pair('Date', d.doc_date)}
+      ${pair('Currency', d.currency)} ${pair('Price Terms', d.price_terms)}
+      ${pair('Seller / Shipper', seller, true)}
+      ${pair('Buyer / Consignee', buyer, true)}
+    </div>`;
+  }
+  const isInv=d.docType==='invoice';
+  return `<div class="sl-info">
+    ${pair(isInv?'Invoice No.':'Packing List No.', d.doc_no)} ${pair('Date', d.doc_date)}
+    ${pair('Reference Contract', d.reference_contract)} ${pair('Price Terms', d.price_terms)}
+    ${pair('Seller / Shipper', seller, true)}
+    ${pair('Buyer / Consignee', buyer, true)}
+    ${pair('Port of Loading', d.pol)} ${pair('Port of Discharge', d.pod)}
+    ${pair('Carrier / Shipping Line', d.carrier)} ${pair('Vessel / Voyage', d.vessel)}
+    ${pair('B/L No.', d.bl_no)} ${pair(isInv?'Currency':'Container Type', isInv?d.currency:d.container_type)}
+  </div>`;
+}
+function slSummaryRow(d){
+  const groups=cGroups(); const cntShared={};
+  state.containers.forEach(c=>{ cntShared[c.container_no]=(cntShared[c.container_no]||0)+1; });
+  const isInv=d.docType==='invoice';
+  let rows=''; let cellsQ=0,modQ=0;
+  Object.keys(groups).forEach(k=>{
+    const g=groups[k];
+    const pallets=g.reduce((s,c)=>s+(parseFloat(c.pallets)||0),0);
+    const boxes=g.reduce((s,c)=>s+(parseFloat(c.boxes)||0),0);
+    const qty=g.reduce((s,c)=>s+qnum(c.quantity),0);
+    const meas=g.reduce((s,c)=>s+(parseFloat(c.measurement)||0),0);
+    const nw=g.reduce((s,c)=>s+(parseFloat(c.nw)||0),0);
+    const gw=g.reduce((s,c)=>s+(parseFloat(c.gw)||0),0);
+    const up=g[0].unit_price||'';
+    const amt=g.reduce((s,c)=>s+qnum(c.quantity)*rateOf(c),0);
+    const isMod=/module/i.test(k);
+    const cnt=[...new Set(g.map(c=>c.container_no))];
+    const cntLabel=cnt.length+(isMod?'*':'');
+    const qtyLabel=qty.toLocaleString('en-US')+' '+(isMod?'modules':'cells');
+    if(isMod) modQ+=qty; else cellsQ+=qty;
+    if(isInv){
+      rows+=`<tr><td>${esc(k)}</td><td style="text-align:right">${cntLabel}</td><td style="text-align:right">${pallets}</td><td style="text-align:right">${boxes}</td><td style="text-align:right">${qtyLabel}</td><td>${esc(up)}</td><td style="text-align:right">${money(amt)}</td></tr>`;
+    } else {
+      rows+=`<tr><td>${esc(k)}</td><td style="text-align:right">${cntLabel}</td><td style="text-align:right">${pallets}</td><td style="text-align:right">${boxes}</td><td style="text-align:right">${qtyLabel}</td><td style="text-align:right">${meas.toFixed(3)}</td><td style="text-align:right">${num(nw)}</td><td style="text-align:right">${num(gw)}</td></tr>`;
+    }
+  });
+  const tp=cSum('pallets'),tb=cSum('boxes'),tm=cSum('measurement'),tn=cSum('nw'),tg=cSum('gw');
+  const qtyTotal=(cellsQ?cellsQ.toLocaleString('en-US')+' cells':'')+(modQ?((cellsQ?' + ':'')+modQ.toLocaleString('en-US')+' modules'):'');
+  if(isInv){
+    rows+=`<tr class="tot"><td></td><td></td><td style="text-align:right">${tp}</td><td style="text-align:right">${tb}</td><td style="text-align:right">${qtyTotal}</td><td></td><td style="text-align:right">${money(totalAmt())}</td></tr>`;
+  } else {
+    rows+=`<tr class="tot"><td></td><td></td><td style="text-align:right">${tp}</td><td style="text-align:right">${tb}</td><td style="text-align:right">${qtyTotal}</td><td style="text-align:right">${tm.toFixed(3)}</td><td style="text-align:right">${num(tn)}</td><td style="text-align:right">${num(tg)}</td></tr>`;
+  }
+  return rows;
+}
+function slContainerRows(d){
+  const cs=state.containers; let rows='';
+  if(!cs.length){ return `<tr><td colspan="11"></td></tr>`; }
+  if(d.docType==='contract'){
+    cs.forEach((c)=>{
+      rows+=`<tr><td>${esc(c.cn)}</td><td>${esc(c.container_no)}</td><td>${esc(c.seal_no)}</td><td style="text-align:right">${c.pallets}</td><td style="text-align:right">${num(qnum(c.quantity))}</td><td style="text-align:right">${esc(c.quantity)}</td><td>${esc(c.unit_price)}</td><td style="text-align:right">${money(qnum(c.quantity)*rateOf(c))}</td><td style="text-align:right">${num(c.nw)}</td><td style="text-align:right">${num(c.gw)}</td></tr>`;
+    });
+    rows+=`<tr class="tot"><td>Grand Total</td><td></td><td></td><td></td><td></td><td></td><td></td><td style="text-align:right">${money(totalAmt())}</td><td style="text-align:right">${num(cSum('nw'))}</td><td style="text-align:right">${num(cSum('gw'))}</td></tr>`;
+  } else if(d.docType==='invoice'){
+    cs.forEach((c,i)=>{
+      rows+=`<tr><td>${i+1}</td><td>${esc(c.cn)}</td><td>${esc(c.container_no)}</td><td>${esc(c.seal_no)}</td><td>${esc(c.description)}</td><td>${esc(c.packing_basis)}</td><td style="text-align:right">${c.pallets}</td><td style="text-align:right">${num(qnum(c.quantity))}</td><td style="text-align:right">${esc(c.quantity)}</td><td>${esc(c.unit_price)}</td><td style="text-align:right">${money(qnum(c.quantity)*rateOf(c))}</td></tr>`;
+    });
+    rows+=`<tr class="tot"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>Total</td><td></td><td style="text-align:right">${money(totalAmt())}</td></tr>`;
+  } else {
+    cs.forEach((c,i)=>{
+      rows+=`<tr><td>${i+1}</td><td>${esc(c.cn)}</td><td>${esc(c.container_no)}</td><td>${esc(c.seal_no)}</td><td>${esc(c.description)}</td><td>${esc(c.packing_basis)}</td><td style="text-align:right">${c.measurement}</td><td style="text-align:right">${c.pallets}</td><td style="text-align:right">${num(qnum(c.quantity))}</td><td style="text-align:right">${esc(c.quantity)}</td><td style="text-align:right">${num(c.nw)}</td><td style="text-align:right">${num(c.gw)}</td></tr>`;
+    });
+    rows+=`<tr class="tot"><td></td><td></td><td></td><td></td><td></td><td></td><td style="text-align:right">${cSum('measurement').toFixed(3)}</td><td style="text-align:right">${cSum('pallets')}</td><td style="text-align:right">${num(cSum('boxes'))}</td><td>Total</td><td style="text-align:right">${num(cSum('nw'))}</td><td style="text-align:right">${num(cSum('gw'))}</td></tr>`;
+  }
+  return rows;
+}
+function slSign(d){
+  return `<div class="sl-sign">
+    <div class="col"><div class="sl-rep">For and on behalf of Seller / Shipper</div>
+      <div class="sl-co2">${esc(d.seller_name)}</div>
+      <div class="sl-chop">Authorized Signature / Company Chop</div>
+      <div class="sl-date">Date: ${esc(d.doc_date)}</div></div>
+    <div class="col"><div class="sl-rep">For and on behalf of Buyer / Consignee</div>
+      <div class="sl-co2">${esc(d.buyer_name)}</div>
+      <div class="sl-chop">Authorized Signature / Company Chop</div>
+      <div class="sl-date">Date: ${esc(d.doc_date)}</div></div>
+  </div>`;
+}
+const SL_PRICING_NOTE='Pricing: Battery Cells at USD 4.60/cell; Battery Modules at USD 112.80/module (24 cells × USD 4.70). CNTR 74 & 75: 40 pallets x 16 boxes x 16 cells each. CNTR 76: 27 pallets cells + 2 pallets modules.';
+const SL_PACKING_NOTE='CNTR 74 & 75: 40 pallets cells (16 boxes/pallet x 16 cells/box). CNTR 76: 27 pallets cells + 2 pallets modules. Total: 109 pallets. *Module pallets in CNTR 76 only.';
+function slContractTerms(d){
+  const groups=cGroups(); const gk=Object.keys(groups);
+  let cellsQ=0,modQ=0,pallets=0; const cnt=new Set();
+  gk.forEach(k=>{ const g=groups[k]; const q=g.reduce((s,c)=>s+qnum(c.quantity),0); if(/module/i.test(k)) modQ+=q; else cellsQ+=q; pallets+=g.reduce((s,c)=>s+(parseFloat(c.pallets)||0),0); g.forEach(c=>cnt.add(c.container_no)); });
+  const qtyLine=(cellsQ?cellsQ.toLocaleString('en-US')+' cells':'')+(modQ?((cellsQ?' + ':'')+modQ.toLocaleString('en-US')+' modules'):'')+` (${pallets} pallets, ${cnt.size} containers)`;
+  const commodity=gk.map(k=>`<div>${esc(k)}</div>`).join('');
+  const unitprice=gk.map(k=>`<div>${esc(groups[k][0].unit_price||'')} (${/module/i.test(k)?'Battery Modules':'Battery Cells'})</div>`).join('');
+  const row=(n,html)=>`<div class="row"><div class="n">${n}.</div><div>${html}</div></div>`;
+  return `<div class="sl-sec">Contract Terms</div><div class="sl-terms">
+    ${row('1',commodity)}
+    ${row('2',qtyLine)}
+    ${row('3',unitprice)}
+    ${row('4',`Total Amount: ${money(totalAmt())}${d.amount_in_words?` (${esc(d.amount_in_words)} (${d.currency||'USD'} ${money(totalAmt())}))`:''}`)}
+    ${row('5',esc(d.price_terms)||'—')}
+    ${row('6',esc(d.pol)||'—')}
+    ${row('7',esc(d.pod)||'—')}
+    ${row('8',esc(d.carrier)||'—')}
+    ${row('9',esc(d.vessel)||'—')}
+    ${row('10',esc(d.bl_no)||'—')}
+    ${row('11',esc(d.payment_terms)||'—')}
+  </div>`;
+}
+function renderSecondLife(d){
+  // 信头：公司块(左) + 标题(右)
+  const tel=[d.seller_tel,d.seller_tel2].filter(x=>x).join(' / ');
+  const web=d.seller_web? (d.seller_email? d.seller_email+' | '+d.seller_web : d.seller_web) : d.seller_email;
+  const head=`<div class="sl-head"><div class="sl-co">
+      <div class="sl-name">${esc(d.seller_name)||'YOUR COMPANY NAME'}</div>
+      <div class="sl-line">${esc(d.seller_address)||''}</div>
+      ${tel?`<div class="sl-line muted">Tel. ${esc(tel)}</div>`:''}
+      ${d.seller_fax?`<div class="sl-line muted">Fax ${esc(d.seller_fax)}</div>`:''}
+      ${web?`<div class="sl-line muted">${esc(web)}</div>`:''}
+    </div><div class="sl-title">${slTitle(d.docType)}</div></div>`;
+  let body=head+slInfo(d);
+  if(d.docType==='invoice'){
+    body+=`<div class="sl-note">${esc(SL_PRICING_NOTE)}</div>`;
+    body+=`<div class="sl-sec">Goods Summary</div>
+      <table class="sl-tbl"><tr><th>Description</th><th>Containers</th><th>Pallets</th><th>Boxes / Cartons</th><th>Quantity</th><th>Unit Price</th><th>Amount</th></tr>
+      ${slSummaryRow(d)}</table>
+      <div class="sl-sec">Container Details</div>
+      <table class="sl-tbl"><tr><th>No.</th><th>CNTR</th><th>Container No.</th><th>Seal No.</th><th>Description of Goods</th><th>Packing Basis</th><th>Pallets</th><th>Boxes / Cartons</th><th>Quantity</th><th>Unit Price</th><th>Total Amount</th></tr>
+      ${slContainerRows(d)}</table>
+      <div class="sl-foot"><div class="sl-amt">Total Amount &nbsp; ${money(totalAmt())}</div>
+      <div class="sl-words">Amount in Words: ${esc(d.amount_in_words)||'—'}<br>(${d.currency||'USD'} ${money(totalAmt())})</div></div>`;
+  } else if(d.docType==='packing'){
+    body+=`<div class="sl-note">${esc(SL_PACKING_NOTE)}</div>`;
+    body+=`<div class="sl-sec">Packing Summary</div>
+      <table class="sl-tbl"><tr><th>Description</th><th>Containers</th><th>Pallets</th><th>Boxes / Cartons</th><th>Quantity</th><th>Measurement</th><th>N.W. kg</th><th>G.W. kg</th></tr>
+      ${slSummaryRow(d)}</table>
+      <div class="sl-sec">Container Details</div>
+      <table class="sl-tbl"><tr><th>No.</th><th>CNTR</th><th>Container No.</th><th>Seal No.</th><th>Description of Goods</th><th>Packing Basis</th><th>Measurement</th><th>Pallets</th><th>Boxes / Cartons</th><th>Quantity</th><th>N.W. kg</th><th>G.W. kg</th></tr>
+      ${slContainerRows(d)}</table>
+      <div class="sl-grid2">
+        <div class="g"><div class="gl">Total Net Weight</div><div>${num(cSum('nw'))} kg</div></div>
+        <div class="g"><div class="gl">Total Gross Weight</div><div>${num(cSum('gw'))} kg</div></div>
+        <div class="g"><div class="gl">Total Measurement</div><div>${cSum('measurement').toFixed(3)} CBM</div></div>
+        <div class="g"><div class="gl">Total Pallets</div><div>${cSum('pallets')}</div></div>
+      </div>`;
+  } else {
+    body+=slContractTerms(d);
+    body+=`<div class="sl-sec">Annex: Container Details</div>
+    <table class="sl-tbl"><tr><th>CNTR</th><th>Container No.</th><th>Seal No.</th><th>Pallets</th><th>PCS</th><th>Quantity</th><th>Unit Price</th><th>Amount</th><th>N.W. kg</th><th>G.W. kg</th></tr>
+    ${slContainerRows(d)}</table>`;
+  }
+  body+=slSign(d);
+  return body;
+}
+
+/* ============ 类型切换 → 显示/隐藏相关字段 ============ */
+function onTypeChange(){
+  const t=$('docType').value;
+  $('contractExtra').style.display = t==='contract'?'block':'none';
+  $('bankCard').style.display = t==='invoice'?'block':'none';
+  $('lblDocNo').textContent = t==='contract'?'合同号 Contract No':'发票号 Invoice No';
+  $('lblDocDate').textContent = t==='contract'?'签约日期 Date':'发票日期 Invoice Date';
+  $('currencyRow').style.display = t==='invoice'?'flex':'none';
+  if(state.items.length===0) state.items=[blankItem()];
+  renderItemsTable(); updateSLSections(); renderPreview();
+}
+
+/* ============ 公司管理 ============ */
+function refreshCompanySelects(){
+  const cs=load(LS.companies,[]);
+  const opt=c=>`<option value="">— 手动填写 —</option>`+cs.map(x=>`<option value="${x.id}">${esc(x.name)}（${TEMPLATE_LABELS[x.template]||x.type}）</option>`).join('');
+  $('sellerSel').innerHTML=opt('seller'); $('buyerSel').innerHTML=opt('buyer');
+}
+function applyCompany(selId,prefix){
+  const id=$(selId).value; if(!id){ if(prefix==='seller'){state.seller=null;updateTplIndicator();} renderPreview(); return; }
+  const c=load(LS.companies,[]).find(x=>x.id==id); if(!c) return;
+  $(prefix+'_name').value=c.name||''; $(prefix+'_address').value=c.address||'';
+  $(prefix+'_country').value=c.country||'';
+  if(prefix==='seller'){ state.seller=c; state.template=c.template||'blue'; updateTplIndicator();
+    $('bank_name').value=c.bank_name||''; $('bank_account').value=c.bank_account||''; $('bank_swift').value=c.bank_swift||''; $('bank_address').value=c.bank_address||'';
+    if(c.template==='secondlife') prefillSecondLife();
+    updateSLSections();
+  }
+  else { state.buyer=c; }
+  renderPreview();
+}
+function renderCompanies(){
+  const cs=load(LS.companies,[]); const tb=$('companiesTable').querySelector('tbody');
+  if(!cs.length){ tb.innerHTML=`<tr><td colspan="7" class="empty">暂无公司，点击右上角“添加公司”</td></tr>`; return; }
+  tb.innerHTML=cs.map(c=>`<tr>
+    <td>${esc(c.name)}</td><td>${c.type}</td><td>${TEMPLATE_LABELS[c.template]||'—'}</td><td>${esc(c.country)}</td><td>${esc(c.phone)}</td><td>${esc(c.bank_name)}</td>
+    <td><span class="link" onclick="editCompany('${c.id}')">编辑</span> &nbsp; <span class="link danger" onclick="delCompany('${c.id}')">删除</span></td></tr>`).join('');
+}
+function editCompany(id){ const c=load(LS.companies,[]).find(x=>x.id==id); if(!c)return;
+  $('companyModalTitle').textContent='编辑公司'; $('c_id').value=c.id;
+  ['name','type','template','logo','tag','contact','address','country','phone','phone2','fax','web','email','bank_name','bank_account','bank_swift','bank_address'].forEach(k=>$( 'c_'+k).value=c[k]||'');
+  openModal('companyModal'); }
+function delCompany(id){
+  if(!confirm('确认删除该公司？删除后无法恢复。'))return;
+  save(LS.companies,load(LS.companies,[]).filter(x=>x.id!=id));
+  let changed=false;
+  if($('sellerSel').value==id){ $('sellerSel').value=''; state.seller=null; changed=true; }
+  if($('buyerSel').value==id){ $('buyerSel').value=''; changed=true; }
+  refreshCompanySelects(); renderCompanies();
+  if(changed){ updateTplIndicator(); renderPreview(); }
+  toast('已删除');
+}
+
+/* ============ 字段识别弹窗 ============ */
+function parsePaste(text){
+  const lines=text.split(/\r?\n/).filter(l=>l.trim());
+  if(!lines.length) return null;
+  const split=l=>l.split(/\t|,|;|\|/).map(s=>s.trim());
+  const headers=split(lines[0]); const rows=lines.slice(1).map(split);
+  return {headers,rows};
+}
+function runReco(){
+  const p=parsePaste($('pasteArea').value);
+  if(!p){ toast('请先粘贴含表头的数据'); return; }
+  state.rawRows=p.rows;
+  const map=autoMap(p.headers); state.mapping=map;
+  const list=$('recoMapList'); list.innerHTML='';
+  const sample=p.rows[0]||[];
+  p.headers.forEach(h=>{
+    const t=map[h];
+    const row=document.createElement('div'); row.className='maprow';
+    row.innerHTML=`<div class="src" title="${esc(h)}">${esc(h)}</div><div class="ar">→</div>
+      <div><select data-h="${esc(h)}">${'<option value="">— 未映射 —</option>'+Object.keys(DICT).map(k=>`<option value="${k}" ${k===t?'selected':''}>${k}</option>`).join('')}</select></div>
+      <div style="font-family:monospace;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(sample[p.headers.indexOf(h)]||'')}">${esc(sample[p.headers.indexOf(h)]||'—')}</div>`;
+    list.appendChild(row);
+  });
+  $('recoResult').style.display='block'; $('recoFoot').style.display='flex';
+}
+function importReco(){
+  const map={}; $('recoMapList').querySelectorAll('select').forEach(s=>{ if(s.value) map[s.dataset.h]=s.value; });
+  if(!state.rawRows||!state.rawRows.length){ toast('没有可导入的数据行'); return; }
+  const allHeaders=parsePaste($('pasteArea').value).headers;
+  const isSL=state.template==='secondlife';
+  if(isSL){
+    const containers=state.rawRows.map(r=>{ const c=blankContainer();
+      allHeaders.forEach((h,i)=>{ const f=map[h]; if(!f) return;
+        if(f==='net_weight') c.nw=r[i]||''; else if(f==='gross_weight') c.gw=r[i]||''; else if(f in c) c[f]=r[i]||''; });
+      return c; })
+      .filter(c=>Object.keys(c).some(k=>c[k]!==''));
+    if(containers.length) state.containers=containers;
+    // 头部字段回填表单
+    const setF=(field,val)=>{ if(val&&$(field)&&!$(field).value) $(field).value=val; };
+    const first=state.rawRows[0]||[];
+    allHeaders.forEach((h,i)=>{ const f=map[h]; const v=first[i]||'';
+      if(f==='invoice_no'||f==='contract_no') setF('doc_no',v);
+      else if(f==='invoice_date'||f==='contract_date') setF('doc_date',v);
+      else if(f==='seller') setF('seller_name',v);
+      else if(f==='buyer') setF('buyer_name',v);
+      else if(f==='currency') setF('currency',v);
+      else if(f==='payment_terms') setF('payment_terms',v);
+      else if(f==='delivery_terms') setF('price_terms',v);
+      else if(f==='port_of_loading') setF('pol',v);
+      else if(f==='port_of_destination') setF('pod',v);
+    });
+    renderContainerTable(); renderPreview(); closeModal('recoModal'); toast('已导入 '+containers.length+' 行集装箱明细');
+  } else {
+    const items=state.rawRows.map(r=>{ const it=blankItem(); allHeaders.forEach((h,i)=>{ const f=map[h]; if(f) it[f]=r[i]||''; }); return it; })
+      .filter(it=>Object.values(it).some(v=>v!==''));
+    state.items=items.length?items:[blankItem()];
+    renderItemsTable(); renderPreview(); closeModal('recoModal'); toast('已导入 '+items.length+' 行商品明细');
+  }
+}
+
+/* ============ 导出 ============ */
+function buildSheetData(){
+  const d=g();
+  if(d.template==='secondlife') return buildSheetDataSL(d);
+  const type=d.docType, items=state.items;
+  const headerMap={
+    invoice:['description','quantity','unit','unit_price'],
+    packing:['marks_numbers','description','packages','gross_weight','net_weight','measurement'],
+    contract:['description','quantity','unit','unit_price']
+  };
+  const labels={ invoice:['Description','Quantity','Unit','Unit Price'],
+    packing:['Marks & Numbers','Description','Packages','Gross Weight','Net Weight','Measurement'],
+    contract:['Description','Quantity','Unit','Unit Price'] };
+  const cols=headerMap[type], lbls=labels[type];
+  const aoa=[];
+  const title = type==='invoice'?'COMMERCIAL INVOICE':type==='packing'?'PACKING LIST':'SALES CONTRACT';
+  aoa.push([title]); aoa.push([]);
+  if(type==='contract'){ aoa.push(['Contract No:',d.doc_no,'Date:',d.doc_date]); aoa.push([]); }
+  else { aoa.push(['Invoice No:',d.doc_no,'Date:',d.doc_date]); aoa.push([]); }
+  aoa.push(['SELLER:',d.seller_name]); aoa.push([d.seller_address+' '+d.seller_country]); aoa.push(['BUYER:',d.buyer_name]); aoa.push([d.buyer_address+' '+d.buyer_country]); aoa.push([]);
+  aoa.push(lbls);
+  items.forEach((it,i)=> aoa.push(cols.map(c=> it[c]||'')));
+  if(type==='invoice'||type==='contract'){
+    const total=items.reduce((s,it)=>s+(+it.quantity||0)*(+it.unit_price||0),0);
+    aoa.push(['TOTAL','','','',total.toFixed(2)]);
+  } else {
+    aoa.push(['TOTAL',sum('packages'),sum('gross_weight').toFixed(2),sum('net_weight').toFixed(2),sum('measurement').toFixed(3)]);
+  }
+  return aoa;
+}
+function slSummaryAOA(d){
+  const groups=cGroups(); const isInv=d.docType==='invoice'; const aoa=[];
+  let cellsQ=0,modQ=0;
+  Object.keys(groups).forEach(k=>{
+    const g=groups[k]; const pallets=g.reduce((s,c)=>s+(parseFloat(c.pallets)||0),0);
+    const boxes=g.reduce((s,c)=>s+(parseFloat(c.boxes)||0),0);
+    const qty=g.reduce((s,c)=>s+qnum(c.quantity),0);
+    const meas=g.reduce((s,c)=>s+(parseFloat(c.measurement)||0),0);
+    const nw=g.reduce((s,c)=>s+(parseFloat(c.nw)||0),0);
+    const gw=g.reduce((s,c)=>s+(parseFloat(c.gw)||0),0);
+    const up=g[0].unit_price||''; const amt=g.reduce((s,c)=>s+qnum(c.quantity)*rateOf(c),0);
+    const isMod=/module/i.test(k); const cnt=[...new Set(g.map(c=>c.container_no))]; const cntLabel=cnt.length+(isMod?'*':'');
+    const qtyLabel=qty.toLocaleString('en-US')+' '+(isMod?'modules':'cells');
+    if(isMod) modQ+=qty; else cellsQ+=qty;
+    if(isInv) aoa.push([k,cntLabel,pallets,boxes,qtyLabel,up,money(amt)]);
+    else aoa.push([k,cntLabel,pallets,boxes,qtyLabel,meas.toFixed(3),num(nw),num(gw)]);
+  });
+  const tp=cSum('pallets'),tb=cSum('boxes'),tm=cSum('measurement'),tn=cSum('nw'),tg=cSum('gw');
+  const qtyTotal=(cellsQ?cellsQ.toLocaleString('en-US')+' cells':'')+(modQ?((cellsQ?' + ':'')+modQ.toLocaleString('en-US')+' modules'):'');
+  if(isInv) aoa.push(['', '', tp, tb, qtyTotal, '', money(totalAmt())]);
+  else aoa.push(['', '', tp, tb, qtyTotal, tm.toFixed(3), num(tn), num(tg)]);
+  return aoa;
+}
+function buildSheetDataSL(d){
+  const aoa=[]; const title=slTitle(d.docType); const cs=state.containers;
+  aoa.push([title]); aoa.push([]);
+  aoa.push(['No.','Date:']); aoa.push([d.doc_no,d.doc_date]); aoa.push([]);
+  aoa.push(['SELLER:',d.seller_name]); aoa.push([d.seller_address+' '+(d.seller_country||'')]); aoa.push(['BUYER:',d.buyer_name]); aoa.push([d.buyer_address+' '+(d.buyer_country||'')]); aoa.push([]);
+  if(d.docType==='contract'){
+    const groups=cGroups(); const gk=Object.keys(groups);
+    let cellsQ=0,modQ=0,pallets=0; const cnt=new Set();
+    gk.forEach(k=>{ const g=groups[k]; const q=g.reduce((s,c)=>s+qnum(c.quantity),0); if(/module/i.test(k)) modQ+=q; else cellsQ+=q; pallets+=g.reduce((s,c)=>s+(parseFloat(c.pallets)||0),0); g.forEach(c=>cnt.add(c.container_no)); });
+    const qtyLine=(cellsQ?cellsQ.toLocaleString('en-US')+' cells':'')+(modQ?((cellsQ?' + ':'')+modQ.toLocaleString('en-US')+' modules'):'')+` (${pallets} pallets, ${cnt.size} containers)`;
+    aoa.push(['Contract Terms']);
+    aoa.push(['1. Commodity',gk.join(' / ')]);
+    aoa.push(['2. Quantity',qtyLine]);
+    aoa.push(['3. Unit Price',gk.map(k=>groups[k][0].unit_price).join(' / ')]);
+    aoa.push(['4. Total Amount',money(totalAmt())+(d.amount_in_words?' ('+d.amount_in_words+')':'')]);
+    aoa.push(['5. Price Terms',d.price_terms]);
+    aoa.push(['6. Port of Loading',d.pol]);
+    aoa.push(['7. Port of Discharge',d.pod]);
+    aoa.push(['8. Carrier',d.carrier]);
+    aoa.push(['9. Vessel / Voyage',d.vessel]);
+    aoa.push(['10. B/L No.',d.bl_no]);
+    aoa.push(['11. Payment Terms',d.payment_terms]);
+    aoa.push([]); aoa.push(['Annex: Container Details']);
+    aoa.push(['CNTR','Container No.','Seal No.','Pallets','Boxes / Cartons','Quantity','Unit Price','Amount','N.W. kg','G.W. kg']);
+    cs.forEach((c)=>aoa.push([c.cn,c.container_no,c.seal_no,c.pallets,c.boxes,c.quantity,c.unit_price,money(qnum(c.quantity)*rateOf(c)),c.nw,c.gw]));
+    aoa.push(['Grand Total','','',cSum('pallets'),cSum('boxes'),cSum('quantity'),'',money(totalAmt()),cSum('nw'),cSum('gw')]);
+  } else if(d.docType==='invoice'){
+    aoa.push(['Reference Contract',d.reference_contract,'Price Terms',d.price_terms]);
+    aoa.push(['Port of Loading',d.pol,'Port of Discharge',d.pod]);
+    aoa.push(['Carrier',d.carrier,'Vessel',d.vessel]);
+    aoa.push(['B/L No.',d.bl_no,'Currency',d.currency]); aoa.push([]);
+    aoa.push(['Goods Summary']); aoa.push(['Description','Containers','Pallets','Boxes / Cartons','Quantity','Unit Price','Amount']);
+    slSummaryAOA(d).forEach(r=>aoa.push(r));
+    aoa.push(['Container Details']);
+    aoa.push(['No.','CNTR','Container No.','Seal No.','Description of Goods','Packing Basis','Pallets','Boxes / Cartons','Quantity','Unit Price','Total Amount']);
+    cs.forEach((c,i)=>aoa.push([i+1,c.cn,c.container_no,c.seal_no,c.description,c.packing_basis,c.pallets,c.boxes,c.quantity,c.unit_price,money(qnum(c.quantity)*rateOf(c))]));
+    aoa.push(['', '', '', '', '', 'Total', cSum('pallets'), cSum('boxes'), cSum('quantity'), '', money(totalAmt())]);
+  } else {
+    aoa.push(['Reference Contract',d.reference_contract,'Price Terms',d.price_terms]);
+    aoa.push(['Port of Loading',d.pol,'Port of Discharge',d.pod]);
+    aoa.push(['Carrier',d.carrier,'Vessel',d.vessel]);
+    aoa.push(['B/L No.',d.bl_no,'Container Type',d.container_type]); aoa.push([]);
+    aoa.push(['Packing Summary']); aoa.push(['Description','Containers','Pallets','Boxes / Cartons','Quantity','Measurement','N.W. kg','G.W. kg']);
+    slSummaryAOA(d).forEach(r=>aoa.push(r));
+    aoa.push(['Container Details']);
+    aoa.push(['No.','CNTR','Container No.','Seal No.','Description of Goods','Packing Basis','Measurement','Pallets','Boxes / Cartons','Quantity','N.W. kg','G.W. kg']);
+    cs.forEach((c,i)=>aoa.push([i+1,c.cn,c.container_no,c.seal_no,c.description,c.packing_basis,c.measurement,c.pallets,c.boxes,c.quantity,c.nw,c.gw]));
+    aoa.push(['', '', '', '', '', 'Total', cSum('measurement'), cSum('pallets'), cSum('boxes'), cSum('quantity'), cSum('nw'), cSum('gw')]);
+  }
+  return aoa;
+}
+function exportExcel(){
+  const aoa=buildSheetData();
+  try{
+    if(typeof XLSX==='undefined') throw new Error('CDN');
+    const ws=XLSX.utils.aoa_to_sheet(aoa);
+    const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'DOC');
+    XLSX.writeFile(wb, `${$('docType').value}_${$('doc_no').value||'draft'}.xlsx`);
+    toast('Excel 已导出');
+  }catch(e){
+    // 离线降级：CSV
+    const csv=aoa.map(r=>r.map(c=>`"${(c??'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`${$('docType').value}_${$('doc_no').value||'draft'}.csv`; a.click();
+    toast('已导出 CSV（Excel 库未加载，离线降级）');
+  }
+}
+function exportPDF(){ window.print(); }
+
+/* ============ 历史记录 ============ */
+function saveDraft(){
+  const d=g(); const rec={ id:Date.now(), doc_type:d.docType, template:d.template, doc_no:d.doc_no,
+    seller_name:d.seller_name, buyer_name:d.buyer_name, created:new Date().toLocaleString('zh-CN'),
+    data:d, items:state.items };
+  const h=load(LS.history,[]); h.unshift(rec); save(LS.history,h); renderHistory(); toast('已保存草稿');
+}
+function renderHistory(){
+  const h=load(LS.history,[]); const tb=$('historyTable').querySelector('tbody');
+  if(!h.length){ tb.innerHTML=`<tr><td colspan="7" class="empty">暂无记录，在生成页点“保存草稿”</td></tr>`; return; }
+  tb.innerHTML=h.map(r=>`<tr>
+    <td>${esc(r.doc_no)}</td><td>${r.doc_type}</td><td>${TEMPLATE_LABELS[r.template]||r.template}</td><td>${esc(r.seller_name)}</td><td>${esc(r.buyer_name)}</td><td>${r.created}</td>
+    <td><span class="link" onclick="loadHistory(${r.id})">载入</span> &nbsp; <span class="link danger" onclick="delHistory(${r.id})">删除</span></td></tr>`).join('');
+}
+function loadHistory(id){ const r=load(LS.history,[]).find(x=>x.id==id); if(!r)return;
+  const d=r.data; $('docType').value=d.docType; state.template=d.template||'blue'; state.seller=null; updateTplIndicator();
+  ['doc_no','doc_date','seller_name','buyer_name','seller_address','buyer_address','seller_country','buyer_country',
+   'payment_terms','delivery_terms','pol','pod','currency','packing','shipping_mark','bank_name','bank_account','bank_swift','bank_address']
+   .forEach(k=>{ if($(k)) $(k).value=d[k]||''; });
+  state.items=r.items&&r.items.length?r.items:[blankItem()];
+  onTypeChange(); switchPage('gen'); toast('已载入历史单证'); }
+function delHistory(id){ if(!confirm('确认删除？'))return; save(LS.history,load(LS.history,[]).filter(x=>x.id!=id)); renderHistory(); toast('已删除'); }
+
+/* ============ 弹窗/页面切换 ============ */
+function openModal(id){ $(id).classList.add('show'); }
+function closeModal(id){ $(id).classList.remove('show'); }
+function switchPage(p){ document.querySelectorAll('.page').forEach(s=>s.classList.remove('active'));
+  $('page-'+p).classList.add('active'); document.querySelectorAll('.nav-menu a').forEach(a=>a.classList.toggle('active',a.dataset.page===p));
+  if(p==='companies'){ refreshCompanySelects(); renderCompanies(); }
+  if(p==='history') renderHistory();
+}
+
+/* ============ 事件绑定 ============ */
+document.querySelectorAll('.nav-menu a').forEach(a=>a.onclick=()=>switchPage(a.dataset.page));
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>closeModal(b.dataset.close));
+$('docType').onchange=onTypeChange;
+['doc_no','doc_date','seller_name','buyer_name','seller_address','buyer_address','seller_country','buyer_country',
+ 'payment_terms','delivery_terms','pol','pod','currency','packing','shipping_mark','bank_name','bank_account','bank_swift','bank_address']
+ .forEach(id=>$(id).addEventListener('input',renderPreview));
+$('sellerSel').onchange=()=>applyCompany('sellerSel','seller');
+$('buyerSel').onchange=()=>applyCompany('buyerSel','buyer');
+$('addRowBtn').onclick=()=>{ state.items.push(blankItem()); renderItemsTable(); renderPreview(); };
+['reference_contract','price_terms','carrier','vessel','bl_no','container_type','quantity_basis','amount_in_words'].forEach(id=>{ const el=$(id); if(el) el.addEventListener('input',renderPreview); });
+$('addCtrBtn').onclick=()=>{ state.containers.push(blankContainer()); renderContainerTable(); renderPreview(); };
+$('pasteBtn').onclick=()=>{ $('pasteArea').value=''; $('recoResult').style.display='none'; $('recoFoot').style.display='none'; openModal('recoModal'); };
+$('recoRun').onclick=runReco;
+$('recoImport').onclick=importReco;
+$('recoLoadFile').onclick=()=>{
+  const f=$('recoFile').files[0]; if(!f){ toast('请先选择文件'); return; }
+  const r=f.name.toLowerCase();
+  const done=(text)=>{ $('pasteArea').value=text; toast('已读取 '+f.name+'，点“识别字段”'); };
+  if(r.endsWith('.csv')){ const fr=new FileReader(); fr.onload=()=>done(String(fr.result)); fr.readAsText(f); return; }
+  if(typeof XLSX!=='undefined'){
+    const fr=new FileReader(); fr.onload=e=>{ try{ const wb=XLSX.read(e.target.result,{type:'array'}); const ws=wb.Sheets[wb.SheetNames[0]];
+      const a=XLSX.utils.sheet_to_json(ws,{header:1,defval:''}); done(a.map(row=>row.map(c=>String(c==null?'':c)).join('\t')).join('\n')); }
+      catch(err){ toast('Excel 解析失败：'+err.message); } }; fr.readAsArrayBuffer(f); return;
+  }
+  toast('Excel 库未加载（需联网），请改用 CSV 或粘贴文本');
+};
+$('pdfBtn').onclick=exportPDF;
+$('excelBtn').onclick=exportExcel;
+$('saveBtn').onclick=saveDraft;
+$('addCompanyBtn').onclick=()=>{ $('companyModalTitle').textContent='添加公司'; $('c_id').value='';
+  ['name','type','address','country','phone','phone2','fax','web','email','bank_name','bank_account','bank_swift','bank_address','logo','tag','contact'].forEach(k=>$( 'c_'+k).value=''); $('c_template').value='blue'; openModal('companyModal'); };
+$('companySave').onclick=()=>{ const name=$('c_name').value.trim(); if(!name){ toast('请填写公司名称'); return; }
+  const cs=load(LS.companies,[]); const id=$('c_id').value||Date.now();
+  const obj={id, name, type:$('c_type').value, template:$('c_template').value, logo:$('c_logo').value, tag:$('c_tag').value, contact:$('c_contact').value,
+    address:$('c_address').value, country:$('c_country').value,
+    phone:$('c_phone').value, phone2:$('c_phone2').value, fax:$('c_fax').value, web:$('c_web').value, email:$('c_email').value,
+    bank_name:$('c_bank_name').value, bank_account:$('c_bank_account').value,
+    bank_swift:$('c_bank_swift').value, bank_address:$('c_bank_address').value };
+  const i=cs.findIndex(x=>x.id==id); if(i>=0)cs[i]=obj; else cs.push(obj);
+  save(LS.companies,cs); closeModal('companyModal'); refreshCompanySelects(); renderCompanies(); toast('公司已保存'); };
+
+/* ============ 初始化 ============ */
+if(!load(LS.companies,[]).length) seedCompanies();
+ensureCompany({id:'seed-secondlife',name:'2nd Life Solutions GmbH',type:'seller',address:'Schillerstrasse 25, 49811 Lingen (Ems), Germany',country:'Germany',phone:'+49 (0)591-71030-0',phone2:'+49 (0)591-71030-22',fax:'+49 (0)591-71030-16',web:'www.deppe-lingen.com',email:'office@deppe-lingen.de',template:'secondlife',logo:'2L',tag:'Schillerstrasse 25, 49811 Lingen (Ems), Germany',contact:'Tel. +49 (0)591-71030-0 / Fax +49 (0)591-71030-16 · office@deppe-lingen.de · www.deppe-lingen.com'});
+ensureCompany({id:'seed-buyer-sl',name:'BATTERY(Shenzhen)New Energy Technology Co., LTD',type:'buyer',address:'Shenzhen, China',country:'China',template:'secondlife',logo:'B',tag:'Shenzhen, China',contact:''});
+state.items=[blankItem()];
+$('doc_date').value=new Date().toISOString().slice(0,10);
+refreshCompanySelects(); updateTplIndicator();
+$('sellerSel').value='seed-secondlife'; applyCompany('sellerSel','seller');
+$('buyerSel').value='seed-buyer-sl'; applyCompany('buyerSel','buyer');
+onTypeChange(); renderPreview();
+</script>
+</body>
+</html>
