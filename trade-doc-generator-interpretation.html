@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trade Document Generator · 项目解读与预览</title>
+<style>
+  :root{
+    --navy:#1a1a2e; --blue:#0f3460; --coral:#e94560; --ink:#222; --muted:#6b7280;
+    --line:#e5e7eb; --bg:#f6f7fb; --card:#fff; --soft:#f0f2f8;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.65}
+  a{color:var(--blue);text-decoration:none}
+  code{background:var(--soft);padding:2px 6px;border-radius:5px;font-family:"SFMono-Regular",Consolas,Menlo,monospace;font-size:13px;color:#b3003b}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+
+  /* Hero */
+  .hero{background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;padding:54px 0 44px}
+  .hero .badge{display:inline-block;background:rgba(233,69,96,.18);border:1px solid rgba(233,69,96,.5);color:#ffd2dc;padding:4px 12px;border-radius:999px;font-size:12px;letter-spacing:.5px;margin-bottom:16px}
+  .hero h1{margin:0;font-size:34px;font-weight:800;letter-spacing:.5px}
+  .hero h1 .cn{font-size:20px;font-weight:600;opacity:.85;margin-left:10px}
+  .hero p{margin:14px 0 0;max-width:760px;opacity:.9;font-size:15px}
+  .hero .meta{display:flex;gap:28px;flex-wrap:wrap;margin-top:24px}
+  .hero .meta div{font-size:13px}
+  .hero .meta b{display:block;font-size:22px;font-weight:800;color:#fff}
+
+  /* Nav */
+  .nav{position:sticky;top:0;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);z-index:50}
+  .nav .wrap{display:flex;gap:6px;flex-wrap:wrap;padding:10px 20px}
+  .nav a{font-size:13px;color:#374151;padding:7px 13px;border-radius:8px;font-weight:600}
+  .nav a:hover{background:var(--soft);color:var(--blue)}
+
+  section{padding:46px 0;border-bottom:1px solid var(--line)}
+  section h2{font-size:24px;margin:0 0 6px;display:flex;align-items:center;gap:10px}
+  section h2 .num{background:var(--coral);color:#fff;width:30px;height:30px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:800}
+  section .lead{color:var(--muted);margin:0 0 26px;font-size:14.5px}
+  h3{font-size:16px;margin:26px 0 10px;color:var(--navy)}
+
+  .grid{display:grid;gap:16px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:820px){.g2,.g3{grid-template-columns:1fr}}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .card h4{margin:0 0 8px;font-size:15px;color:var(--navy)}
+  .card p{margin:0;font-size:13.5px;color:#4b5563}
+  .feat{display:flex;gap:12px;align-items:flex-start}
+  .feat .ico{font-size:20px;line-height:1.2}
+  .pill{display:inline-block;font-size:11.5px;background:var(--soft);color:#374151;padding:3px 9px;border-radius:999px;margin:3px 4px 0 0;font-weight:600}
+
+  table{border-collapse:collapse;width:100%;font-size:13px;background:var(--card);border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+  th,td{border-bottom:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:var(--soft);color:var(--navy);font-weight:700}
+  tr:last-child td{border-bottom:none}
+  td code{font-size:12px}
+
+  /* Architecture */
+  .arch{display:flex;flex-direction:column;gap:10px}
+  .layer{border:1px solid var(--line);border-radius:12px;padding:14px 18px;background:#fff}
+  .layer .t{font-weight:800;color:var(--navy);font-size:14px;margin-bottom:4px}
+  .layer .c{display:flex;gap:8px;flex-wrap:wrap}
+  .layer.client{background:linear-gradient(90deg,#eef2ff,#f6f7fb)}
+  .layer.server{background:linear-gradient(90deg,#fff1f3,#f6f7fb)}
+  .layer.data{background:linear-gradient(90deg,#ecfdf5,#f6f7fb)}
+  .arrow{text-align:center;color:var(--muted);font-size:18px;line-height:1}
+
+  /* Tabs / live preview */
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+  .tab{border:1px solid var(--line);background:#fff;padding:9px 16px;border-radius:10px;cursor:pointer;font-weight:700;font-size:13px;color:#374151}
+  .tab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .layout2{display:grid;grid-template-columns:340px 1fr;gap:20px}
+  @media(max-width:900px){.layout2{grid-template-columns:1fr}}
+  .form label{display:block;font-size:11.5px;font-weight:700;color:#374151;margin:10px 0 3px}
+  .form input,.form select{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-family:inherit}
+  .form .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .preview-wrap{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;overflow:auto}
+  .doc{font-family:"Times New Roman",Georgia,serif;color:#1a1a2e;font-size:12.5px;max-width:680px;margin:0 auto;background:#fff;padding:8px 6px}
+  .doc h1.tt{font-size:26px;text-align:center;margin:0;letter-spacing:1px;font-weight:800}
+  .doc .rule{height:2px;background:var(--coral);margin:10px 0 14px}
+  .doc .row{display:flex;gap:24px;margin-bottom:14px}
+  .doc .col{flex:1}
+  .doc .lab{color:var(--coral);font-weight:700;font-size:11px;letter-spacing:.5px;margin-bottom:4px}
+  .doc table.dt{width:100%;border-collapse:collapse;margin-top:6px}
+  .doc table.dt th{background:var(--navy);color:#fff;border:1px solid var(--navy)}
+  .doc table.dt td{border:1px solid #ccc;padding:4px 6px}
+  .doc .tot{background:#f0f0f0;font-weight:700}
+  .doc .sign{display:flex;gap:24px;margin-top:26px}
+  .doc .sign div{flex:1;text-align:center;font-style:italic;color:#555;font-size:11px}
+  .doc .clause{margin:6px 0}
+  .doc .clause .ch{font-weight:700;color:var(--navy)}
+
+  .muted-note{font-size:12.5px;color:var(--muted);background:var(--soft);border-left:3px solid var(--coral);padding:10px 14px;border-radius:8px;margin-top:14px}
+
+  /* field recognition demo */
+  .reco{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px}
+  .reco textarea{width:100%;min-height:70px;border:1px solid var(--line);border-radius:8px;padding:9px;font-family:inherit;font-size:13px}
+  .maprow{display:grid;grid-template-columns:1fr 40px 1fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px dashed var(--line);font-size:13px}
+  .maprow:last-child{border-bottom:none}
+  .maprow .src{font-family:monospace;background:var(--soft);padding:5px 8px;border-radius:6px}
+  .maprow .arrow{text-align:center;color:var(--coral);font-weight:800}
+  .maprow .tg{font-weight:700;color:var(--blue)}
+  .maprow .tg.none{color:var(--muted);font-weight:500;font-style:italic}
+  .btn{background:var(--navy);color:#fff;border:none;padding:9px 18px;border-radius:9px;cursor:pointer;font-weight:700;font-size:13px}
+  .btn:hover{opacity:.9}
+
+  .tree{font-family:monospace;font-size:12.5px;background:#0f172a;color:#e2e8f0;border-radius:14px;padding:18px 20px;overflow:auto;line-height:1.7}
+  .tree .d{color:#7dd3fc}
+  .tree .f{color:#fcd34d}
+  .tree .c{color:#94a3b8}
+
+  .callout{border:1px solid #fecaca;background:#fff5f6;border-radius:12px;padding:16px 18px;font-size:13.5px}
+  .callout b{color:#b3003b}
+  .footer{padding:30px 0 50px;color:var(--muted);font-size:12.5px;text-align:center}
+  .tag{font-size:11px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="wrap">
+    <span class="badge">ZIP 解读报告 · trade-doc-generator.zip</span>
+    <h1>Trade Document Generator<span class="cn">国际贸易单证生成器</span></h1>
+    <p>一个基于 Node.js + Express 的全栈 Web 应用：上传 Excel/CSV 后由 AI 自动识别字段，一键生成<b>商业发票（INVOICE）、装箱单（PACKING LIST）、销售合同（CONTRACT）</b>三种国际贸易单证，并导出为 PDF 或 Excel。本页对其结构与核心逻辑做完整解读，并附可交互的网页版单证预览。</p>
+    <div class="meta">
+      <div><b>22</b>个文件 / 242 KB</div>
+      <div><b>3</b>种单证类型</div>
+      <div><b>9</b>套内置模板</div>
+      <div><b>12</b>个 REST 接口</div>
+      <div><b>v1.0.0</b>版本</div>
+    </div>
+  </div>
+</div>
+
+<nav class="nav">
+  <div class="wrap">
+    <a href="#overview">项目概览</a>
+    <a href="#arch">系统架构</a>
+    <a href="#preview">交互预览</a>
+    <a href="#data">数据模型</a>
+    <a href="#api">API 接口</a>
+    <a href="#reco">字段识别</a>
+    <a href="#struct">项目结构</a>
+    <a href="#run">运行与说明</a>
+  </div>
+</nav>
+
+<section id="overview">
+  <div class="wrap">
+    <h2><span class="num">1</span>项目概览</h2>
+    <p class="lead">一句话定位：把散落在 Excel/CSV 里的贸易数据，自动化编排成符合国际惯例的标准英文单证。</p>
+    <div class="grid g3">
+      <div class="card feat"><div class="ico">📄</div><div><h4>三类单证</h4><p>Commercial INVOICE / PACKING LIST / SALES CONTRACT，覆盖出货、装箱、签约三大场景。</p></div></div>
+      <div class="card feat"><div class="ico">🤖</div><div><h4>AI 字段识别</h4><p>内置中英数字典规则匹配；可配置 OpenAI 兼容接口做更强的语义映射，未配置则自动降级到规则引擎。</p></div></div>
+      <div class="card feat"><div class="ico">🎨</div><div><h4>三套模板</h4><p>Classic / Modern / Minimal 三种风格，并支持用户上传自定义 Excel 模板。</p></div></div>
+      <div class="card feat"><div class="ico">📤</div><div><h4>双格式导出</h4><p>基于 <code>pdfkit</code> 与 <code>exceljs</code> 生成 A4 PDF 与排版 Excel，文件落盘 <code>exports/</code>。</p></div></div>
+      <div class="card feat"><div class="ico">🗂️</div><div><h4>公司 / 历史</h4><p>买卖方公司信息可复用；所有单证存 SQLite，支持草稿、复制、删除与再导出。</p></div></div>
+      <div class="card feat"><div class="ico">⚡</div><div><h4>实时预览</h4><p>前端填表即时渲染预览，导出前即可核对，所见即所得。</p></div></div>
+    </div>
+    <h3>技术栈</h3>
+    <div>
+      <span class="pill">Node.js</span><span class="pill">Express 4</span><span class="pill">better-sqlite3</span><span class="pill">multer（文件上传）</span><span class="pill">exceljs（Excel）</span><span class="pill">pdfkit（PDF）</span><span class="pill">cors</span><span class="pill">dotenv</span><span class="pill">原生 HTML/CSS/JS 前端</span>
+    </div>
+  </div>
+</section>
+
+<section id="arch">
+  <div class="wrap">
+    <h2><span class="num">2</span>系统架构</h2>
+    <p class="lead">典型三层：浏览器前端 → Express 路由层 → 服务/工具（生成 + 字段映射）→ SQLite 持久化。</p>
+    <div class="arch">
+      <div class="layer client">
+        <div class="t">① 前端（public/）</div>
+        <div class="c"><span class="pill">index.html 单证生成页</span><span class="pill">公司管理</span><span class="pill">模板管理</span><span class="pill">历史记录</span><span class="pill">实时预览 + 字段映射弹窗</span><span class="pill">app.js（原生 JS）</span></div>
+      </div>
+      <div class="arrow">▲  HTTP / JSON  ◆  multipart 文件上传  ▼</div>
+      <div class="layer server">
+        <div class="t">② 服务端（server.js + src/routes/）</div>
+        <div class="c"><span class="pill">/api/companies</span><span class="pill">/api/templates</span><span class="pill">/api/documents</span><span class="pill">/api/upload（识别+映射）</span><span class="pill">/api/health</span></div>
+      </div>
+      <div class="arrow">▲  调用  ▼</div>
+      <div class="layer server" style="background:linear-gradient(90deg,#fff7ed,#f6f7fb)">
+        <div class="t">③ 服务与工具（src/services、src/utils）</div>
+        <div class="c"><span class="pill">excelService.js → Excel</span><span class="pill">pdfService.js → PDF</span><span class="pill">fieldMapper.js → 规则/AI 字段识别</span></div>
+      </div>
+      <div class="arrow">▲  读写  ▼</div>
+      <div class="layer data">
+        <div class="t">④ 持久化</div>
+        <div class="c"><span class="pill">SQLite（better-sqlite3，WAL 模式）</span><span class="pill">data/app.db</span><span class="pill">uploads/ · exports/ · templates/ 目录</span></div>
+      </div>
+    </div>
+    <div class="muted-note">请求流：用户在生成页填写或<b>上传 Excel</b> → <code>/api/upload/recognize</code> 解析表头并用 <code>fieldMapper</code> 自动映射 → 弹窗人工确认 → 提交为商品明细 → 点「导出 PDF / Excel」触发 <code>pdfService</code> / <code>excelService</code> 生成文件并落盘，前端通过 <code>/api/documents/download/:filename</code> 下载。</div>
+  </div>
+</section>
+
+<section id="preview">
+  <div class="wrap">
+    <h2><span class="num">3</span>交互预览（网页版单证）</h2>
+    <p class="lead">下方为按项目内置 PDF 版式复刻的 HTML 预览。可在左侧填写信息，右侧实时生成对应单证（样例数据已预填，可直接修改）。</p>
+    <div class="tabs">
+      <div class="tab active" data-doc="invoice">🧾 Commercial INVOICE</div>
+      <div class="tab" data-doc="packing">📦 PACKING LIST</div>
+      <div class="tab" data-doc="contract">📜 SALES CONTRACT</div>
+    </div>
+    <div class="layout2">
+      <div class="card form" id="formPanel">
+        <label>单证号 Doc No</label>
+        <input id="f_docno" value="INV-2026-001">
+        <label>日期 Date</label>
+        <input id="f_date" value="2026-08-17">
+        <div class="two">
+          <div><label>卖方 Seller</label><input id="f_seller" value="SHANGHAI SUNRISE TRADING CO., LTD."></div>
+          <div><label>买方 Buyer</label><input id="f_buyer" value="GLOBAL IMPORTS INC."></div>
+        </div>
+        <div class="two">
+          <div><label>卖方地址</label><input id="f_saddr" value="No.88 Pudong Ave, Shanghai"></div>
+          <div><label>买方地址</label><input id="f_baddr" value="500 Harbor Blvd, Los Angeles, CA"></div>
+        </div>
+        <div class="two">
+          <div><label>付款方式</label><input id="f_pay" value="T/T 30% deposit, 70% against B/L"></div>
+          <div><label>交货条款</label><input id="f_del" value="FOB Shanghai"></div>
+        </div>
+        <div class="two">
+          <div><label>装运港</label><input id="f_pol" value="Shanghai Port"></div>
+          <div><label>目的港</label><input id="f_pod" value="Los Angeles"></div>
+        </div>
+        <label>币种 Currency</label>
+        <select id="f_cur"><option>USD</option><option>EUR</option><option>CNY</option><option>GBP</option><option>JPY</option></select>
+        <label>商品明细（每行：品名|数量|单位|单价，回车换行）</label>
+        <textarea id="f_items" style="min-height:96px">Cotton T-Shirt|1200|PCS|3.50
+Ceramic Mug|800|PCS|2.10
+Bamboo Cutting Board|300|PCS|4.80</textarea>
+      </div>
+      <div class="preview-wrap"><div class="doc" id="docRender"></div></div>
+    </div>
+    <div class="muted-note">注：真实应用由 <code>pdfkit</code> 生成矢量 PDF、<code>exceljs</code> 生成 Excel；此处用 HTML/CSS 1:1 复刻其经典版（v1）排版，便于在浏览器中预览效果。</div>
+  </div>
+</section>
+
+<section id="data">
+  <div class="wrap">
+    <h2><span class="num">4</span>数据模型（SQLite）</h2>
+    <p class="lead">共 4 张表，首次启动由 <code>src/db.js</code> 自动建表并写入 9 条内置模板。</p>
+    <div class="grid g2">
+      <div class="card">
+        <h4>companies · 公司信息</h4>
+        <p style="margin-bottom:8px">买卖方档案，含银行信息，供生成时快速带入。</p>
+        <p class="tag">id, name, type(seller/buyer/both), address, city, country, phone, email, tax_id, bank_name, bank_account, bank_swift, bank_address, created/updated_at</p>
+      </div>
+      <div class="card">
+        <h4>templates · 模板</h4>
+        <p style="margin-bottom:8px">9 套内置（is_builtin=1）+ 用户自定义上传。</p>
+        <p class="tag">id, name, doc_type(invoice/packing/contract), version(v1/v2/v3/custom), is_builtin, file_path, config(JSON)</p>
+      </div>
+      <div class="card">
+        <h4>documents · 单证历史</h4>
+        <p style="margin-bottom:8px">完整单证存为 JSON；<code>data</code> 存抬头信息，<code>items</code> 存商品明细数组。</p>
+        <p class="tag">id, doc_type, doc_no, template_id, seller_id, buyer_id, data(JSON), items(JSON), status(draft), created/updated_at</p>
+      </div>
+      <div class="card">
+        <h4>field_mappings · 字段映射规则</h4>
+        <p style="margin-bottom:8px">可持久化自定义列名→标准字段的映射，提升重复识别准确率。</p>
+        <p class="tag">id, name, source_columns(JSON), target_fields(JSON), created_at</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="api">
+  <div class="wrap">
+    <h2><span class="num">5</span>API 接口</h2>
+    <p class="lead">REST 风格，JSON 交互，文件下载走 <code>res.download</code>。</p>
+    <table>
+      <thead><tr><th>方法</th><th>路径</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>GET</td><td><code>/api/companies</code></td><td>公司列表</td></tr>
+        <tr><td>POST / PUT / DELETE</td><td><code>/api/companies(/:id)</code></td><td>增 / 改 / 删公司</td></tr>
+        <tr><td>GET</td><td><code>/api/templates?doc_type=</code></td><td>模板列表（可按类型过滤）</td></tr>
+        <tr><td>POST</td><td><code>/api/templates/upload</code></td><td>上传自定义 Excel 模板</td></tr>
+        <tr><td>DELETE</td><td><code>/api/templates/:id</code></td><td>删除自定义模板（内置不可删）</td></tr>
+        <tr><td>GET</td><td><code>/api/documents</code></td><td>历史单证（可按 doc_type 过滤）</td></tr>
+        <tr><td>POST</td><td><code>/api/documents</code></td><td>保存草稿</td></tr>
+        <tr><td>PUT / DELETE</td><td><code>/api/documents/:id</code></td><td>更新 / 删除单证</td></tr>
+        <tr><td>POST</td><td><code>/api/documents/generate</code></td><td>直接生成导出（不落库）</td></tr>
+        <tr><td>POST</td><td><code>/api/documents/:id/export</code></td><td>导出历史单证为 PDF/Excel</td></tr>
+        <tr><td>POST</td><td><code>/api/documents/:id/duplicate</code></td><td>复制单证</td></tr>
+        <tr><td>GET</td><td><code>/api/documents/download/:filename</code></td><td>下载导出文件</td></tr>
+        <tr><td>POST</td><td><code>/api/upload/recognize</code></td><td>上传 Excel/CSV 并识别字段</td></tr>
+        <tr><td>POST</td><td><code>/api/upload/map</code></td><td>按确认后的映射转换数据行</td></tr>
+        <tr><td>GET</td><td><code>/api/health</code></td><td>健康检查</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="reco">
+  <div class="wrap">
+    <h2><span class="num">6</span>AI 字段识别逻辑</h2>
+    <p class="lead">核心在 <code>src/utils/fieldMapper.js</code>：维护一张中英文同义词词典，对每列表头做相似度匹配。下方是可运行的演示——输入你的表头，看看会被映射到哪个标准字段。</p>
+    <div class="reco">
+      <label style="font-weight:700;font-size:13px">输入表头（逗号或换行分隔，支持中文/英文/缩写）</label>
+      <textarea id="recoInput">发票号, 客户名称, 货物品名, 数量, 单位, 单价, 金额, 毛重, 唛头, 装运港, 备注列</textarea>
+      <div style="margin-top:12px"><button class="btn" id="recoBtn">运行识别 →</button></div>
+      <div id="recoOut" style="margin-top:16px"></div>
+    </div>
+    <div class="muted-note">算法说明：①精确相等直接命中（score=1）；②包含关系 0.85；③按字符交集比例计算相似度，阈值 ≥0.5 才采纳；④同一目标字段不重复占用。配置 <code>AI_API_KEY</code> 后改用 LLM 语义映射，失败自动回退规则引擎。</div>
+  </div>
+</section>
+
+<section id="struct">
+  <div class="wrap">
+    <h2><span class="num">7</span>项目结构</h2>
+    <p class="lead">解压后的目录树（来自 zip 内 22 个文件）。</p>
+    <div class="tree">
+<span class="d">trade-doc-generator/</span>
+├── <span class="f">server.js</span>              <span class="c"># Express 入口，挂载静态资源与 4 组路由</span>
+├── <span class="f">package.json</span>          <span class="c"># 7 个依赖</span>
+├── <span class="f">package-lock.json</span>
+├── <span class="f">README.md</span>
+├── <span class="f">.env.example</span>          <span class="c"># PORT + 可选 AI 配置</span>
+├── <span class="f">.gitignore</span>
+├── <span class="f">server_err.txt</span>        <span class="c"># 运行报错日志（见下方说明）</span>
+├── <span class="d">public/</span>
+│   ├── <span class="f">index.html</span>         <span class="c"># 单页前端（4 个页面切换）</span>
+│   ├── <span class="d">css/</span><span class="f">style.css</span>
+│   └── <span class="d">js/</span><span class="f">app.js</span>     <span class="c"># 表单/预览/上传/映射逻辑</span>
+├── <span class="d">src/</span>
+│   ├── <span class="f">db.js</span>              <span class="c"># SQLite 建表 + 初始化内置模板</span>
+│   ├── <span class="d">routes/</span>
+│   │   ├── <span class="f">companies.js</span>   <span class="c"># 公司 CRUD</span>
+│   │   ├── <span class="f">templates.js</span>   <span class="c"># 模板管理</span>
+│   │   ├── <span class="f">documents.js</span>   <span class="c"># 单证生成/导出/历史</span>
+│   │   └── <span class="f">upload.js</span>      <span class="c"># 表格解析 + 字段识别 + 映射转换</span>
+│   ├── <span class="d">services/</span>
+│   │   ├── <span class="f">excelService.js</span> <span class="c"># ExcelJS 生成 3 类单证</span>
+│   │   └── <span class="f">pdfService.js</span>   <span class="c"># PDFKit 生成 3 类单证（v1/v2/v3 风格）</span>
+│   └── <span class="d">utils/</span>
+│       └── <span class="f">fieldMapper.js</span> <span class="c"># 规则 + AI 字段识别</span>
+├── <span class="d">data/</span>  <span class="d">uploads/</span>  <span class="d">exports/</span>  <span class="d">templates/</span>  <span class="c"># 运行时目录（含 .gitkeep）</span>
+    </div>
+  </div>
+</section>
+
+<section id="run">
+  <div class="wrap">
+    <h2><span class="num">8</span>运行与关键说明</h2>
+    <div class="grid g2">
+      <div class="card">
+        <h4>启动步骤</h4>
+        <p>① <code>npm install</code> 安装依赖（含原生模块 <code>better-sqlite3</code>，需本地编译环境）<br>② 复制 <code>.env.example</code> 为 <code>.env</code>（可选填 AI 配置）<br>③ <code>npm start</code> → 访问 <code>http://localhost:3000</code></p>
+      </div>
+      <div class="card">
+        <h4>设计亮点</h4>
+        <p>• 字段识别与人工确认分离，安全可控<br>• 生成与保存解耦（<code>/generate</code> 不落库）<br>• 模板风格配置化（v1/v2/v3 配色字体可切）<br>• 纯英文单证内容，贴合国际贸易惯例</p>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:18px">
+      <b>⚠ 已知问题（来自 zip 内 server_err.txt）：</b><br>
+      日志显示启动时报 <code>EADDRINUSE :::3000</code> —— 端口 3000 被占用导致服务未起来。解决：先结束占用 3000 端口的进程，或改 <code>.env</code> 的 <code>PORT</code> 后重启。此外，<code>better-sqlite3</code>、<code>pdfkit</code> 为含原生编译的依赖，需保证 Node 构建工具链可用。
+    </div>
+  </div>
+</section>
+
+<div class="footer">本页由 WorkBuddy 根据 <code>trade-doc-generator.zip</code> 源码自动生成 · 仅供项目解读与预览之用</div>
+
+<script>
+// ---------- 交互预览 ----------
+const $ = id => document.getElementById(id);
+function parseItems(txt){
+  return txt.split(/\n+/).map(l=>l.trim()).filter(Boolean).map(l=>{
+    const p=l.split(/[|,]/).map(s=>s.trim());
+    return {description:p[0]||'',quantity:p[1]||'',unit:p[2]||'',unit_price:p[3]||''};
+  });
+}
+function renderDoc(){
+  const doc = document.querySelector('.tab.active').dataset.doc;
+  const g = {
+    docno:$('f_docno').value, date:$('f_date').value, seller:$('f_seller').value, buyer:$('f_buyer').value,
+    saddr:$('f_saddr').value, baddr:$('f_baddr').value, pay:$('f_pay').value, del:$('f_del').value,
+    pol:$('f_pol').value, pod:$('f_pod').value, cur:$('f_cur').value
+  };
+  const items = parseItems($('f_items').value);
+  let total=0, rows='';
+  items.forEach((it,i)=>{
+    const amt=(parseFloat(it.quantity)||0)*(parseFloat(it.unit_price)||0); total+=amt;
+    rows+=`<tr><td>${i+1}</td><td>${it.description}</td><td style="text-align:right">${it.quantity}</td><td>${it.unit}</td><td style="text-align:right">${it.unit_price}</td><td style="text-align:right">${amt.toFixed(2)}</td></tr>`;
+  });
+  for(let i=items.length;i<5;i++) rows+=`<tr><td>${i+1}</td><td></td><td></td><td></td><td></td><td></td></tr>`;
+  let html='';
+  if(doc==='invoice'){
+    html=`<h1 class="tt">COMMERCIAL INVOICE</h1><div class="rule"></div>
+    <div class="row"><div class="col"><div class="lab">SELLER / EXPORTER</div>${g.seller}<br>${g.saddr}</div>
+    <div class="col"><div class="lab">INVOICE INFORMATION</div>Invoice No: ${g.docno}<br>Date: ${g.date}<br>Payment: ${g.pay}<br>Delivery: ${g.del}<br>Currency: ${g.cur}</div></div>
+    <div class="row"><div class="col"><div class="lab">BUYER / IMPORTER</div>${g.buyer}<br>${g.baddr}</div>
+    <div class="col"><div class="lab">SHIPPING</div>Port of Loading: ${g.pol}<br>Port of Destination: ${g.pod}</div></div>
+    <table class="dt"><tr><th>No.</th><th>Description</th><th>Qty</th><th>Unit</th><th>Unit Price</th><th>Amount</th></tr>${rows}
+    <tr class="tot"><td colspan="5" style="text-align:right">TOTAL AMOUNT</td><td style="text-align:right;color:#e94560">${total.toFixed(2)}</td></tr></table>
+    <div class="sign"><div>Authorized Signature</div><div>Company Stamp</div></div>`;
+  } else if(doc==='packing'){
+    html=`<h1 class="tt">PACKING LIST</h1><div class="rule"></div>
+    <div class="row"><div class="col"><div class="lab">SELLER / EXPORTER</div>${g.seller}<br>${g.saddr}</div>
+    <div class="col"><div class="lab">INFORMATION</div>Invoice No: ${g.docno}<br>Date: ${g.date}<br>Payment: ${g.pay}</div></div>
+    <div class="row"><div class="col"><div class="lab">BUYER / CONSIGNEE</div>${g.buyer}<br>${g.baddr}</div><div class="col"></div></div>
+    <table class="dt"><tr><th>No.</th><th>Marks &amp; Numbers</th><th>Description</th><th>Pkgs</th><th>G.W(KG)</th><th>N.W(KG)</th><th>CBM</th></tr>
+    ${items.map((it,i)=>`<tr><td>${i+1}</td><td></td><td>${it.description}</td><td style="text-align:right">${it.quantity}</td><td></td><td></td><td></td></tr>`).join('')}
+    <tr class="tot"><td colspan="3">TOTAL</td><td style="text-align:right">${items.reduce((s,it)=>s+(+it.quantity||0),0)}</td><td></td><td></td><td></td></tr></table>
+    <div class="sign"><div>Authorized Signature</div><div>Company Stamp</div></div>`;
+  } else {
+    html=`<h1 class="tt">SALES CONTRACT</h1><div class="rule"></div>
+    <div style="text-align:center;font-weight:700">Contract No: ${g.docno}    Date: ${g.date}</div><br>
+    <div class="clause"><span class="ch">THE SELLER:</span> ${g.seller}<br>${g.saddr}</div>
+    <div class="clause"><span class="ch">THE BUYER:</span> ${g.buyer}<br>${g.baddr}</div>
+    <div class="clause"><span class="ch">5. DELIVERY TERMS:</span> ${g.del}</div>
+    <div class="clause"><span class="ch">6. PAYMENT TERMS:</span> ${g.pay}</div>
+    <div class="clause"><span class="ch">9. PORT OF LOADING:</span> ${g.pol}</div>
+    <div class="clause"><span class="ch">10. PORT OF DESTINATION:</span> ${g.pod}</div>
+    <div class="clause"><span class="ch">GOODS DETAILS</span></div>
+    <table class="dt"><tr><th>No.</th><th>Description</th><th>Quantity</th><th>Unit Price</th><th>Amount</th></tr>${rows}
+    <tr class="tot"><td colspan="4" style="text-align:right">TOTAL</td><td style="text-align:right;color:#e94560">${total.toFixed(2)}</td></tr></table>
+    <div class="sign"><div>THE SELLER</div><div>THE BUYER</div></div>`;
+  }
+  $('docRender').innerHTML=html;
+}
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active'); renderDoc();
+});
+['f_docno','f_date','f_seller','f_buyer','f_saddr','f_baddr','f_pay','f_del','f_pol','f_pod','f_cur','f_items'].forEach(id=>{
+  $(id).addEventListener('input',renderDoc);
+});
+renderDoc();
+
+// ---------- 字段识别演示 ----------
+const DICT = {
+  invoice_no:['invoice no','invoice number','invoice #','发票号','发票号码','inv no','inv. no'],
+  invoice_date:['invoice date','date','发票日期','日期','inv date'],
+  seller:['seller','exporter','shipper','beneficiary','卖方','出口商','发货人','受益人'],
+  buyer:['buyer','importer','consignee','applicant','买方','进口商','收货人','申请人'],
+  payment_terms:['payment terms','terms of payment','付款方式','支付条款','payment'],
+  delivery_terms:['delivery terms','trade terms','incoterms','价格条款','交货条款','贸易术语'],
+  port_of_loading:['port of loading','pol','loading port','装运港','起运港','装货港'],
+  port_of_destination:['port of destination','pod','destination port','discharge port','目的港','卸货港'],
+  currency:['currency','curr','币种','货币'],
+  description:['description','goods description','product description','commodity','item description','商品名称','品名','货物描述','产品描述','货品名称'],
+  quantity:['quantity','qty','数量'], unit_price:['unit price','price','unit cost','单价','价格'],
+  amount:['amount','total','line total','subtotal','金额','总价','小计'], unit:['unit','uom','unit of measure','单位','计量单位'],
+  marks_numbers:['marks & numbers','marks and numbers','marks','shipping marks','唛头','运输标志','标记及号码'],
+  gross_weight:['gross weight','g.w.','gw','毛重'], net_weight:['net weight','n.w.','nw','净重'],
+  measurement:['measurement','meas.','cbm','volume','体积','尺码'], packages:['packages','pkgs','cartons','number of packages','件数','箱数','包装数量'],
+  contract_no:['contract no','contract number','contract #','合同号','合同编号'],
+  packing:['packing','packing terms','包装','包装条款'], shipping_mark:['shipping mark','ship mark','运输标志','唛头'],
+  insurance:['insurance','保险','保险条款'], inspection:['inspection','检验','检验条款'],
+  force_majeure:['force majeure','不可抗力'], arbitration:['arbitration','仲裁','仲裁条款']
+};
+function similarity(a,b){ if(a===b) return 1; if(a.includes(b)||b.includes(a)) return .85;
+  const sa=new Set(a), sb=new Set(b); let c=0; sa.forEach(ch=>{if(sb.has(ch))c++}); return c/Math.max(sa.size,sb.size); }
+function autoMap(headers){
+  const map={}, used=new Set();
+  headers.forEach(h=>{
+    const n=String(h).toLowerCase().trim(); let best=null, score=0;
+    for(const [t,syns] of Object.entries(DICT)){
+      for(const s of syns){
+        const sc=similarity(n,s.toLowerCase());
+        if(sc>score && !used.has(t)){score=sc;best=t;}
+        if(n===s.toLowerCase()){best=t;score=1;break;}
+      }
+      if(score===1) break;
+    }
+    if(best && score>=0.5){map[h]=best;used.add(best);} else map[h]=null;
+  });
+  return map;
+}
+$('recoBtn').onclick=()=>{
+  const headers=$('recoInput').value.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);
+  const map=autoMap(headers);
+  let html='';
+  headers.forEach(h=>{
+    const t=map[h];
+    html+=`<div class="maprow"><div class="src">${h}</div><div class="arrow">→</div><div class="tg ${t?'':'none'}">${t||'未识别 / 需手动映射'}</div></div>`;
+  });
+  $('recoOut').innerHTML=html;
+};
+$('recoBtn').click();
+</script>
+</body>
+</html>
