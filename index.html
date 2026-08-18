@@ -207,6 +207,36 @@
   .hint{font-size:12px;color:var(--muted);background:var(--soft);border-left:3px solid var(--coral);padding:9px 13px;border-radius:8px;margin-top:12px}
   .empty{text-align:center;color:var(--muted);padding:40px 0;font-size:13px}
   textarea.paste{width:100%;min-height:110px;border:1px solid var(--line);border-radius:8px;padding:10px;font-family:monospace;font-size:12.5px}
+
+  /* 印鉴品牌（Logo / Seal） */
+  .brand-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:760px){.brand-grid{grid-template-columns:1fr}}
+  .brand-block{border:1px solid var(--line);border-radius:10px;padding:14px;background:#fff}
+  .brand-block{border:1px solid var(--line);border-radius:10px;padding:14px;background:#fff}
+  .brand-label{font-weight:700;color:var(--navy);margin-bottom:8px;font-size:13px}
+  .brand-drop{position:relative;width:100%;height:150px;border:2px dashed var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:var(--soft);transition:.2s;overflow:hidden}
+  .brand-drop:hover,.brand-drop.drag{border-color:var(--blue);background:#f0f6ff}
+  .brand-drop img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+  .brand-drop .hint-mini{color:var(--muted);font-size:12.5px;pointer-events:none}
+  .brand-drop.has-image{border-style:solid;border-color:var(--line);background:#fff}
+  .brand-controls{margin-top:10px;display:grid;gap:8px;font-size:12.5px}
+  .brand-controls label{display:flex;align-items:center;gap:8px;color:var(--ink)}
+  .brand-controls select,.brand-controls input[type=range]{padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:#fff;font-size:12.5px}
+  .brand-controls .ctl-row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .brand-controls .ctl-row .label{font-weight:600;color:var(--navy);flex:none}
+  .brand-controls .ctl-row .ctrl{flex:1;display:flex;align-items:center;gap:8px}
+  .brand-mini-val{display:inline-block;min-width:36px;text-align:right;color:var(--coral);font-weight:700;font-family:monospace}
+  .brand-controls .btn-sm{padding:5px 10px;font-size:12px}
+
+  /* 模板上的 Logo / Seal 叠层 */
+  .doc{position:relative;overflow:hidden}
+  .doc .stamp{position:absolute;pointer-events:none;z-index:0;mix-blend-mode:multiply;display:block;object-fit:contain}
+  .doc .stamp.layer-front{z-index:60;mix-blend-mode:normal}
+  .doc .stamp.size-auto{ /* 占位，避免抖动 */ }
+  /* 文字层置上：所有模板核心 text 容器加 z-index 提到 stamp 之上 */
+  .doc .hd-cl,.doc .hd-min,.doc .band,.doc .tt-box,.doc .info,.doc .dt,.doc .bank-box,.doc .sign,
+  .doc .tt,.doc .tt-sub,.doc .dbl-rule,.doc .min-rule,.doc .frame,
+  .doc .sl-head,.doc .sl-info,.doc .sl-note,.doc .sl-tbl,.doc .sl-sec,.doc .sl-foot,.doc .sl-sign,.doc .sl-terms,.doc .sl-title{position:relative;z-index:1}
   @media print{
     @page{ size:A4; margin:10mm }
     .navbar,.container>.layout>div:first-child,.action-bar,.page-header p,.nav-menu{display:none !important}
@@ -276,6 +306,59 @@
           <div class="form-row">
             <div><label>卖方国家 Seller Country</label><input id="seller_country" placeholder="Country"></div>
             <div><label>买方国家 Buyer Country</label><input id="buyer_country" placeholder="Country"></div>
+          </div>
+        </div>
+
+        <div class="card" id="brandCard">
+          <h3>2.5 · 印鉴品牌 <span class="cn">Logo &amp; Seal</span></h3>
+          <p style="margin:0 0 10px;font-size:12.5px;color:var(--muted)">为当前卖方公司上传 Logo 与公司印章（PNG/JPG）。上传后系统自动识别图片内容边界并裁剪。<b>默认"浮于底层"</b>：印章层位于文字下方，文字永远不会被印章遮挡；如需突出，可改为"浮于上层"。</p>
+          <div class="brand-grid">
+            <div class="brand-block">
+              <div class="brand-label">公司 Logo <span style="font-weight:500;color:var(--muted);font-size:12px">· 出现在信头</span></div>
+              <div class="brand-drop" id="logoDrop" data-kind="logo">
+                <input type="file" id="logoFile" accept="image/*" hidden>
+                <span class="hint-mini">点击或拖入图片</span>
+              </div>
+              <div class="brand-controls" id="logoCtrls" style="display:none">
+                <div class="ctl-row"><span class="label">位置</span><div class="ctrl">
+                  <select id="logoPos">
+                    <option value="header-left">信头左上角</option>
+                    <option value="header-right">信头右上角</option>
+                    <option value="footer-left">页脚左侧</option>
+                    <option value="footer-right">页脚右下</option>
+                  </select></div></div>
+                <div class="ctl-row"><span class="label">大小</span><div class="ctrl">
+                  <input type="range" id="logoSize" min="20" max="180" value="80">
+                  <span class="brand-mini-val" id="logoSizeVal">80 px</span></div></div>
+                <div class="ctl-row"><span class="label">层级</span><div class="ctrl">
+                  <select id="logoLayer"><option value="back">浮于底层（文字在上）</option><option value="front">浮于上层（图片在上）</option></select></div></div>
+                <div class="ctl-row"><span class="label"></span><div class="ctrl">
+                  <button class="btn btn-sm" id="logoRemove">清除 Logo</button></div></div>
+              </div>
+            </div>
+            <div class="brand-block">
+              <div class="brand-label">公司印章 <span style="font-weight:500;color:var(--muted);font-size:12px">· 出现在签字区</span></div>
+              <div class="brand-drop" id="sealDrop" data-kind="seal">
+                <input type="file" id="sealFile" accept="image/*" hidden>
+                <span class="hint-mini">点击或拖入图片</span>
+              </div>
+              <div class="brand-controls" id="sealCtrls" style="display:none">
+                <div class="ctl-row"><span class="label">位置</span><div class="ctrl">
+                  <select id="sealPos">
+                    <option value="sign-right">签字区右下</option>
+                    <option value="sign-left">签字区左下</option>
+                    <option value="bottom-right">页面右下角</option>
+                    <option value="center">页面居中</option>
+                  </select></div></div>
+                <div class="ctl-row"><span class="label">大小</span><div class="ctrl">
+                  <input type="range" id="sealSize" min="40" max="220" value="140">
+                  <span class="brand-mini-val" id="sealSizeVal">140 px</span></div></div>
+                <div class="ctl-row"><span class="label">层级</span><div class="ctrl">
+                  <select id="sealLayer"><option value="back">浮于底层（推荐）</option><option value="front">浮于上层</option></select></div></div>
+                <div class="ctl-row"><span class="label"></span><div class="ctrl">
+                  <button class="btn btn-sm" id="sealRemove">清除印章</button></div></div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -484,7 +567,7 @@
 <script>
 /* ============ 状态 ============ */
 const $ = id => document.getElementById(id);
-const LS = { companies:'tdg_companies', history:'tdg_history' };
+const LS = { companies:'tdg_companies', history:'tdg_history', brand:'tdg_brand' };
 let state = { items:[], containers:[], mapping:null, rawRows:null, template:'blue', seller:null, buyer:null };
 const TEMPLATE_LABELS = { blue:'经典蓝', orange:'现代橙', green:'简约绿', secondlife:'Second Life' };
 function updateTplIndicator(){
@@ -549,6 +632,200 @@ function ensureCompany(obj){
 function load(k,def){ try{ return JSON.parse(localStorage.getItem(k))||def; }catch(e){ return def; } }
 function save(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
 function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),1900); }
+
+/* ============ 印鉴品牌（Logo / Seal） ============ */
+const BRAND_DEFAULTS={
+  logo:{pos:'header-left', size:80, layer:'back'},
+  seal:{pos:'sign-right',  size:140, layer:'back'}
+};
+function currentCompanyId(){ return state.seller && state.seller.id ? state.seller.id : null; }
+function getBrandStore(){ return load(LS.brand,{}); }
+function getCurrentBrand(){
+  const id=currentCompanyId(); if(!id) return {logo:null,seal:null};
+  const bs=getBrandStore(); const b=bs[id]||{}; return { logo: b.logo||null, seal: b.seal||null };
+}
+function saveBrand(kind, payload){
+  const id=currentCompanyId(); if(!id) return;
+  const bs=getBrandStore(); const b=bs[id]||{}; b[kind]=payload; bs[id]=b; save(LS.brand,bs);
+}
+
+/* 自动识别图片内容边界（非白像素包围盒）+ 透明背景裁剪 */
+function analyzeImage(file){
+  return new Promise((resolve,reject)=>{
+    const fr=new FileReader();
+    fr.onload=ev=>{
+      const img=new Image();
+      img.onload=()=>{
+        try{
+          const w=img.naturalWidth, h=img.naturalHeight;
+          // 限制最大尺寸（避免 4K 图卡死）
+          const MAX=1024;
+          const scale=Math.min(1, MAX/Math.max(w,h));
+          const cw=Math.max(1, Math.round(w*scale)), ch=Math.max(1, Math.round(h*scale));
+          const cv=document.createElement('canvas'); cv.width=cw; cv.height=ch;
+          const ctx=cv.getContext('2d'); ctx.drawImage(img,0,0,cw,ch);
+          const data=ctx.getImageData(0,0,cw,ch).data;
+          let minX=cw, minY=ch, maxX=-1, maxY=-1;
+          // 阈值 245：RGB 任一通道 < 245 视为非白像素
+          for(let y=0;y<ch;y++){
+            for(let x=0;x<cw;x++){
+              const i=(y*cw+x)*4;
+              const r=data[i], g=data[i+1], b=data[i+2], a=data[i+3];
+              if(a>10 && (r<245 || g<245 || b<245)){ if(x<minX)minX=x; if(y<minY)minY=y; if(x>maxX)maxX=x; if(y>maxY)maxY=y; }
+            }
+          }
+          if(maxX<0){ resolve({dataURL:img.src, w:w, h:h, empty:true}); return; }
+          // 边界留 4px padding
+          minX=Math.max(0,minX-4); minY=Math.max(0,minY-4); maxX=Math.min(cw-1,maxX+4); maxY=Math.min(ch-1,maxY+4);
+          const bw=maxX-minX+1, bh=maxY-minY+1;
+          // 透明背景裁剪（把外部涂成透明）
+          const out=document.createElement('canvas'); out.width=bw; out.height=bh;
+          const octx=out.getContext('2d');
+          octx.drawImage(cv, minX, minY, bw, bh, 0, 0, bw, bh);
+          // 自动把近白内填充设为透明（处理浅色印章背景）：仅对外圈一定比例的白边做透明化，内部保留
+          const odata=octx.getImageData(0,0,bw,bh).data;
+          for(let y=0;y<bh;y++){ for(let x=0;x<bw;x++){
+            const i=(y*bw+x)*4;
+            const r=odata[i], g=odata[i+1], b=odata[i+2];
+            // 近白 -> 透明
+            if(r>240 && g>240 && b>240){ odata[i+3]=0; }
+          }}
+          octx.putImageData(new ImageData(odata, bw, bh), 0, 0);
+          resolve({ dataURL:out.toDataURL('image/png'), w:bw, h:bh, empty:false });
+        }catch(err){ reject(err); }
+      };
+      img.onerror=()=>reject(new Error('图片读取失败'));
+      img.src=ev.target.result;
+    };
+    fr.onerror=()=>reject(new Error('文件读取失败'));
+    fr.readAsDataURL(file);
+  });
+}
+
+/* 在 .doc 容器内叠放两张图（Logo / Seal）。back 层在文字下，front 层浮于上层。 */
+const POS_MAP={
+  'header-left':{top:'12mm',left:'10mm'},
+  'header-right':{top:'12mm',right:'10mm'},
+  'footer-left':{bottom:'8mm',left:'10mm'},
+  'footer-right':{bottom:'8mm',right:'10mm'},
+  'sign-left':{bottom:'36mm',left:'10mm'},
+  'sign-right':{bottom:'36mm',right:'12mm'},
+  'center':{top:'50%',left:'50%',transform:'translate(-50%,-50%)'},
+  'bottom-right':{bottom:'8mm',right:'10mm'}
+};
+function stampStyleFor(pos, size){
+  const p=POS_MAP[pos]||POS_MAP['header-left'];
+  const s='position:absolute;width:'+size+'px;height:auto;';
+  const loc = (p.top?'top:'+p.top+';':'') + (p.bottom?'bottom:'+p.bottom+';':'') + (p.left?'left:'+p.left+';':'') + (p.right?'right:'+p.right+';':'');
+  const tr = p.transform?('transform:'+p.transform+';'):'';
+  return s+loc+tr;
+}
+function renderStamps(){
+  // 先清掉上一次的叠层
+  document.querySelectorAll('#doc .stamp').forEach(el=>el.remove());
+  const brand=getCurrentBrand(); if(!brand.logo && !brand.seal) return;
+  const doc=$('doc');
+  if(brand.logo && brand.logo.dataURL){
+    const img=document.createElement('img');
+    img.className='stamp '+(brand.logo.layer==='front'?'layer-front':'layer-back');
+    img.src=brand.logo.dataURL; img.alt='logo';
+    img.style.cssText=stampStyleFor(brand.logo.pos||'header-left', brand.logo.size||80);
+    doc.appendChild(img);
+  }
+  if(brand.seal && brand.seal.dataURL){
+    const img=document.createElement('img');
+    img.className='stamp '+(brand.seal.layer==='front'?'layer-front':'layer-back');
+    img.src=brand.seal.dataURL; img.alt='seal';
+    img.style.cssText=stampStyleFor(brand.seal.pos||'sign-right', brand.seal.size||140);
+    doc.appendChild(img);
+  }
+}
+
+/* 同步 UI：把当前公司的 brand 状态写到 UI */
+function renderBrandUI(){
+  const brand=getCurrentBrand();
+  ['logo','seal'].forEach(kind=>{
+    const drop=$(kind+'Drop'), ctrls=$(kind+'Ctrls'),
+          pos=$(kind+'Pos'), size=$(kind+'Size'), sizeVal=$(kind+'SizeVal'),
+          layer=$(kind+'Layer');
+    const data=brand[kind];
+    if(!data || !data.dataURL){
+      if(drop) drop.classList.remove('has-image');
+      const img=drop && drop.querySelector('img'); if(img) img.remove();
+      if(drop && !drop.querySelector('.hint-mini')){
+        const h=document.createElement('span'); h.className='hint-mini'; h.textContent='点击或拖入图片'; drop.appendChild(h);
+      }
+      if(ctrls) ctrls.style.display='none';
+    } else {
+      if(drop){ drop.classList.add('has-image'); }
+      const img=drop && drop.querySelector('img'); 
+      if(img){ img.src=data.dataURL; }
+      else {
+        if(drop){
+          const old=drop.querySelector('.hint-mini'); if(old) old.remove();
+          const ni=document.createElement('img'); ni.src=data.dataURL; ni.alt=kind;
+          drop.appendChild(ni);
+        }
+      }
+      if(ctrls) ctrls.style.display='grid';
+      if(pos) pos.value = data.pos || BRAND_DEFAULTS[kind].pos;
+      if(size){ size.value = data.size || BRAND_DEFAULTS[kind].size; if(sizeVal) sizeVal.textContent = (data.size||BRAND_DEFAULTS[kind].size)+' px'; }
+      if(layer) layer.value = data.layer || BRAND_DEFAULTS[kind].layer;
+    }
+  });
+}
+
+/* UI → state（用户在 UI 里改动，立即写回 store 并刷新预览） */
+function bindBrandControl(kind){
+  const drop=$(kind+'Drop'), file=$(kind+'File'),
+        pos=$(kind+'Pos'), size=$(kind+'Size'), sizeVal=$(kind+'SizeVal'),
+        layer=$(kind+'Layer'), removeBtn=$(kind+'Remove');
+  // 点击 drop 触发文件选择
+  if(drop && file){ drop.onclick=()=>file.click(); }
+  // 文件选择完成
+  if(file){
+    file.onchange=async e=>{
+      const f=e.target.files && e.target.files[0]; if(!f) return;
+      if(!currentCompanyId()){ toast('请先选择卖方公司'); file.value=''; return; }
+      try{
+        toast('正在识别图片…');
+        const r=await analyzeImage(f);
+        const def=BRAND_DEFAULTS[kind];
+        const cur=getCurrentBrand()[kind]||{};
+        const payload={ dataURL:r.dataURL,
+          pos: cur.pos || def.pos,
+          size:cur.size||def.size,
+          layer:cur.layer||def.layer };
+        saveBrand(kind, payload);
+        renderBrandUI(); renderStamps();
+        toast(r.empty ? '图片加载成功（未识别到非白内容，已原图放置）' : '已识别并放置'+ (kind==='logo'?'Logo':'印章'));
+      }catch(err){ toast('识别失败：'+err.message); }
+      finally{ file.value=''; }
+    };
+  }
+  // 拖拽上传
+  if(drop){
+    drop.addEventListener('dragover',e=>{ e.preventDefault(); drop.classList.add('drag'); });
+    drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
+    drop.addEventListener('drop',e=>{
+      e.preventDefault(); drop.classList.remove('drag');
+      const f=e.dataTransfer.files && e.dataTransfer.files[0]; if(!f) return;
+      const dt=new DataTransfer(); dt.items.add(f); file.files=dt.files; file.dispatchEvent(new Event('change'));
+    });
+  }
+  // 位置 / 大小 / 层级 变化立即写回
+  if(pos){ pos.onchange=()=>{ const cur=getCurrentBrand()[kind]||{}; saveBrand(kind, Object.assign({},cur,{pos:pos.value})); renderStamps(); }; }
+  if(size){ size.oninput=()=>{ const v=parseInt(size.value,10); if(sizeVal) sizeVal.textContent=v+' px'; const cur=getCurrentBrand()[kind]||{}; saveBrand(kind, Object.assign({},cur,{size:v})); renderStamps(); }; }
+  if(layer){ layer.onchange=()=>{ const cur=getCurrentBrand()[kind]||{}; saveBrand(kind, Object.assign({},cur,{layer:layer.value})); renderStamps(); }; }
+  // 清除
+  if(removeBtn){ removeBtn.onclick=()=>{
+    if(!currentCompanyId()){ toast('请先选择卖方公司'); return; }
+    const bs=getBrandStore(); const id=currentCompanyId(); const b=bs[id]||{}; delete b[kind]; bs[id]=b; save(LS.brand,bs);
+    renderBrandUI(); renderStamps(); toast('已清除'+(kind==='logo'?'Logo':'印章'));
+  }; }
+}
+bindBrandControl('logo');
+bindBrandControl('seal');
 
 /* ============ 字段识别字典（源自原项目 fieldMapper.js） ============ */
 const DICT = {
@@ -720,7 +997,7 @@ function g(){ const c=state.seller||{}; return {
 function renderPreview(){
   const d=g(); const doc=$('doc'); doc.className='doc '+d.template;
   $('pvBadge').textContent=d.docType.toUpperCase();
-  if(d.template==='secondlife'){ doc.innerHTML=renderSecondLife(d); return; }
+  if(d.template==='secondlife'){ doc.innerHTML=renderSecondLife(d); renderStamps(); return; }
   const T={invoice:['COMMERCIAL INVOICE','商业发票'],packing:['PACKING LIST','装箱单'],contract:['SALES CONTRACT','销售合同']};
   const head=tplHeader(d,T[d.docType][0],T[d.docType][1]);
   const items=state.items;
@@ -765,6 +1042,9 @@ function renderPreview(){
     <div class="sign"><div>THE SELLER</div><div>THE BUYER</div></div>`;
   }
   doc.innerHTML=(d.template==='blue'?'<div class="frame">':'')+body+(d.template==='blue'?'</div>':'');
+
+  // 叠印鉴品牌（图层在文字之上不挡字）
+  renderStamps();
 }
 function esc(s){ return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 
@@ -954,7 +1234,7 @@ function refreshCompanySelects(){
   $('sellerSel').innerHTML=opt('seller'); $('buyerSel').innerHTML=opt('buyer');
 }
 function applyCompany(selId,prefix){
-  const id=$(selId).value; if(!id){ if(prefix==='seller'){state.seller=null;updateTplIndicator();} renderPreview(); return; }
+  const id=$(selId).value; if(!id){ if(prefix==='seller'){state.seller=null;updateTplIndicator();renderBrandUI();} renderPreview(); return; }
   const c=load(LS.companies,[]).find(x=>x.id==id); if(!c) return;
   $(prefix+'_name').value=c.name||''; $(prefix+'_address').value=c.address||'';
   $(prefix+'_country').value=c.country||'';
@@ -962,6 +1242,7 @@ function applyCompany(selId,prefix){
     $('bank_name').value=c.bank_name||''; $('bank_account').value=c.bank_account||''; $('bank_swift').value=c.bank_swift||''; $('bank_address').value=c.bank_address||'';
     if(c.template==='secondlife') prefillSecondLife();
     updateSLSections();
+    renderBrandUI();
   }
   else { state.buyer=c; }
   renderPreview();
