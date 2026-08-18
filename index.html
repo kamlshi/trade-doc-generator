@@ -227,10 +227,17 @@
   .brand-controls .ctl-row .ctrl{flex:1;display:flex;align-items:center;gap:8px}
   .brand-mini-val{display:inline-block;min-width:36px;text-align:right;color:var(--coral);font-weight:700;font-family:monospace}
   .brand-controls .btn-sm{padding:5px 10px;font-size:12px}
+  .coord-group{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12px}
+  .coord-group label{display:flex;align-items:center;gap:4px;color:var(--muted)}
+  .coord-group input[type=number]{width:80px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:#fff;font-size:12.5px;font-family:monospace}
+  .preset-row{display:flex;gap:4px;flex-wrap:wrap}
+  .preset{padding:4px 9px;border:1px solid var(--line);background:var(--soft);border-radius:6px;font-size:11.5px;cursor:pointer;color:var(--ink);transition:.15s}
+  .preset:hover{background:var(--blue);color:#fff;border-color:var(--blue)}
 
   /* 模板上的 Logo / Seal 叠层 */
   .doc{position:relative;overflow:hidden}
-  .doc .stamp{position:absolute;pointer-events:none;z-index:0;mix-blend-mode:multiply;display:block;object-fit:contain}
+  .doc .stamp{position:absolute;pointer-events:auto;z-index:0;mix-blend-mode:multiply;display:block;object-fit:contain;cursor:move;outline:1px dashed transparent;transition:outline-color .15s}
+  .doc .stamp:hover{outline-color:rgba(0,0,0,.35)}
   .doc .stamp.layer-front{z-index:60;mix-blend-mode:normal}
   .doc .stamp.size-auto{ /* 占位，避免抖动 */ }
   /* 文字层置上：所有模板核心 text 容器加 z-index 提到 stamp 之上 */
@@ -311,7 +318,7 @@
 
         <div class="card" id="brandCard">
           <h3>2.5 · 印鉴品牌 <span class="cn">Logo &amp; Seal</span></h3>
-          <p style="margin:0 0 10px;font-size:12.5px;color:var(--muted)">为当前卖方公司上传 Logo 与公司印章（PNG/JPG）。上传后系统自动识别图片内容边界并裁剪。<b>默认"浮于底层"</b>：印章层位于文字下方，文字永远不会被印章遮挡；如需突出，可改为"浮于上层"。</p>
+          <p style="margin:0 0 10px;font-size:12.5px;color:var(--muted)">为当前卖方公司上传 Logo 与公司印章（PNG/JPG）。上传后系统自动识别图片内容边界并裁剪。<b>默认"浮于底层"</b>：印章层位于文字下方，文字永远不会被印章遮挡；如需突出，可改为"浮于上层"。<b>位置</b>可在左侧 X/Y 数字框输入，也可直接在右侧预览上<b>拖动</b>图片，或点"快捷"按钮锚定到 7 个常用位置。</p>
           <div class="brand-grid">
             <div class="brand-block">
               <div class="brand-label">公司 Logo <span style="font-weight:500;color:var(--muted);font-size:12px">· 出现在信头</span></div>
@@ -321,12 +328,22 @@
               </div>
               <div class="brand-controls" id="logoCtrls" style="display:none">
                 <div class="ctl-row"><span class="label">位置</span><div class="ctrl">
-                  <select id="logoPos">
-                    <option value="header-left">信头左上角</option>
-                    <option value="header-right">信头右上角</option>
-                    <option value="footer-left">页脚左侧</option>
-                    <option value="footer-right">页脚右下</option>
-                  </select></div></div>
+                  <div class="coord-group">
+                    <label>X (mm) <input type="number" id="logoX" min="0" max="300" step="0.5" value="10"></label>
+                    <label>Y (mm) <input type="number" id="logoY" min="0" max="400" step="0.5" value="8"></label>
+                  </div>
+                </div></div>
+                <div class="ctl-row"><span class="label">快捷</span><div class="ctrl">
+                  <div class="preset-row">
+                    <button type="button" class="preset" data-kind="logo" data-pos="tl">左上</button>
+                    <button type="button" class="preset" data-kind="logo" data-pos="tr">右上</button>
+                    <button type="button" class="preset" data-kind="logo" data-pos="cl">左中</button>
+                    <button type="button" class="preset" data-kind="logo" data-pos="cr">右中</button>
+                    <button type="button" class="preset" data-kind="logo" data-pos="bl">左下</button>
+                    <button type="button" class="preset" data-kind="logo" data-pos="br">右下</button>
+                    <button type="button" class="preset" data-kind="logo" data-pos="mid">居中</button>
+                  </div>
+                </div></div>
                 <div class="ctl-row"><span class="label">大小</span><div class="ctrl">
                   <input type="range" id="logoSize" min="20" max="180" value="80">
                   <span class="brand-mini-val" id="logoSizeVal">80 px</span></div></div>
@@ -344,12 +361,22 @@
               </div>
               <div class="brand-controls" id="sealCtrls" style="display:none">
                 <div class="ctl-row"><span class="label">位置</span><div class="ctrl">
-                  <select id="sealPos">
-                    <option value="sign-right">签字区右下</option>
-                    <option value="sign-left">签字区左下</option>
-                    <option value="bottom-right">页面右下角</option>
-                    <option value="center">页面居中</option>
-                  </select></div></div>
+                  <div class="coord-group">
+                    <label>X (mm) <input type="number" id="sealX" min="0" max="300" step="0.5" value="130"></label>
+                    <label>Y (mm) <input type="number" id="sealY" min="0" max="400" step="0.5" value="235"></label>
+                  </div>
+                </div></div>
+                <div class="ctl-row"><span class="label">快捷</span><div class="ctrl">
+                  <div class="preset-row">
+                    <button type="button" class="preset" data-kind="seal" data-pos="tl">左上</button>
+                    <button type="button" class="preset" data-kind="seal" data-pos="tr">右上</button>
+                    <button type="button" class="preset" data-kind="seal" data-pos="cl">左中</button>
+                    <button type="button" class="preset" data-kind="seal" data-pos="cr">右中</button>
+                    <button type="button" class="preset" data-kind="seal" data-pos="bl">左下</button>
+                    <button type="button" class="preset" data-kind="seal" data-pos="br">右下</button>
+                    <button type="button" class="preset" data-kind="seal" data-pos="mid">居中</button>
+                  </div>
+                </div></div>
                 <div class="ctl-row"><span class="label">大小</span><div class="ctrl">
                   <input type="range" id="sealSize" min="40" max="220" value="140">
                   <span class="brand-mini-val" id="sealSizeVal">140 px</span></div></div>
@@ -634,9 +661,20 @@ function save(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
 function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),1900); }
 
 /* ============ 印鉴品牌（Logo / Seal） ============ */
+// 默认位置（mm，相对于 .doc 左上角）
 const BRAND_DEFAULTS={
-  logo:{pos:'header-left', size:80, layer:'back'},
-  seal:{pos:'sign-right',  size:140, layer:'back'}
+  logo:{pos:{x:10, y:8},    size:80, layer:'back'},
+  seal:{pos:{x:130, y:235}, size:140,layer:'back'}
+};
+// 预设位置（mm）：一键锚定按钮使用
+const POS_PRESETS={
+  'tl':{x:10,  y:10,   label:'左上'},
+  'tr':{x:160, y:10,   label:'右上'},
+  'cl':{x:10,  y:130,  label:'左中'},
+  'cr':{x:155, y:130,  label:'右中'},
+  'bl':{x:10,  y:260,  label:'左下'},
+  'br':{x:155, y:260,  label:'右下'},
+  'mid':{x:80, y:140,  label:'正中'}
 };
 function currentCompanyId(){ return state.seller && state.seller.id ? state.seller.id : null; }
 function getBrandStore(){ return load(LS.brand,{}); }
@@ -703,40 +741,66 @@ function analyzeImage(file){
 }
 
 /* 在 .doc 容器内叠放两张图（Logo / Seal）。back 层在文字下，front 层浮于上层。 */
-const POS_MAP={
-  'header-left':{top:'12mm',left:'10mm'},
-  'header-right':{top:'12mm',right:'10mm'},
-  'footer-left':{bottom:'8mm',left:'10mm'},
-  'footer-right':{bottom:'8mm',right:'10mm'},
-  'sign-left':{bottom:'36mm',left:'10mm'},
-  'sign-right':{bottom:'36mm',right:'12mm'},
-  'center':{top:'50%',left:'50%',transform:'translate(-50%,-50%)'},
-  'bottom-right':{bottom:'8mm',right:'10mm'}
-};
 function stampStyleFor(pos, size){
-  const p=POS_MAP[pos]||POS_MAP['header-left'];
-  const s='position:absolute;width:'+size+'px;height:auto;';
-  const loc = (p.top?'top:'+p.top+';':'') + (p.bottom?'bottom:'+p.bottom+';':'') + (p.left?'left:'+p.left+';':'') + (p.right?'right:'+p.right+';':'');
-  const tr = p.transform?('transform:'+p.transform+';'):'';
-  return s+loc+tr;
+  const p = (pos && typeof pos.x==='number' && typeof pos.y==='number') ? pos : BRAND_DEFAULTS.logo.pos;
+  return 'position:absolute;width:'+(size||80)+'px;height:auto;left:'+p.x+'mm;top:'+p.y+'mm;';
 }
+// 把 .doc 的实际像素宽换算成 mm（不同模板宽度略不同）
+function docUnit(){ const w=$('doc').getBoundingClientRect().width; return w>0?{mmPerPx:210/w, docWidthPx:w}:{mmPerPx:1, docWidthPx:210}; }
+function pxToMmX(px, u){ return Math.round(px * u.mmPerPx); }
+function mmToPxX(mm, u){ return mm / u.mmPerPx; }
 function renderStamps(){
   // 先清掉上一次的叠层
   document.querySelectorAll('#doc .stamp').forEach(el=>el.remove());
   const brand=getCurrentBrand(); if(!brand.logo && !brand.seal) return;
   const doc=$('doc');
+  const attachDrag=(img, kind)=>{
+    img.addEventListener('mousedown', e=>{
+      e.preventDefault(); e.stopPropagation();
+      const u=docUnit();
+      const docRect=doc.getBoundingClientRect();
+      const startX=e.clientX, startY=e.clientY;
+      const cur=getCurrentBrand()[kind]||BRAND_DEFAULTS[kind];
+      const baseX=cur.pos.x, baseY=cur.pos.y;
+      const onMove=ev=>{
+        const dx=ev.clientX-startX, dy=ev.clientY-startY;
+        const newX=Math.max(0, Math.round((baseX + pxToMmX(dx, u))*10)/10);
+        const newY=Math.max(0, Math.round((baseY + pxToMmX(dy, u))*10)/10);
+        img.style.left=newX+'mm'; img.style.top=newY+'mm';
+        const xy=$(kind+'X'); if(xy) xy.value=newX;
+        const yy=$(kind+'Y'); if(yy) yy.value=newY;
+      };
+      const onUp=ev=>{
+        document.removeEventListener('mousemove',onMove);
+        document.removeEventListener('mouseup',onUp);
+        const u2=docUnit();
+        const dx=ev.clientX-startX, dy=ev.clientY-startY;
+        const newX=Math.max(0, Math.round((baseX + pxToMmX(dx, u2))*10)/10);
+        const newY=Math.max(0, Math.round((baseY + pxToMmX(dy, u2))*10)/10);
+        const cur2=getCurrentBrand()[kind]||{};
+        saveBrand(kind, Object.assign({},cur2,{pos:{x:newX,y:newY}}));
+        renderBrandUI(); // 同步 x/y 输入框
+      };
+      document.addEventListener('mousemove',onMove);
+      document.addEventListener('mouseup',onUp);
+    });
+  };
   if(brand.logo && brand.logo.dataURL){
     const img=document.createElement('img');
-    img.className='stamp '+(brand.logo.layer==='front'?'layer-front':'layer-back');
+    img.className='stamp '+(brand.logo.layer==='front'?'layer-front':'layer-back')+' draggable';
     img.src=brand.logo.dataURL; img.alt='logo';
-    img.style.cssText=stampStyleFor(brand.logo.pos||'header-left', brand.logo.size||80);
+    img.style.cssText=stampStyleFor(brand.logo.pos, brand.logo.size||80);
+    img.title='Logo · 拖动调整位置；也可在左面板修改 X/Y 坐标';
+    attachDrag(img, 'logo');
     doc.appendChild(img);
   }
   if(brand.seal && brand.seal.dataURL){
     const img=document.createElement('img');
-    img.className='stamp '+(brand.seal.layer==='front'?'layer-front':'layer-back');
+    img.className='stamp '+(brand.seal.layer==='front'?'layer-front':'layer-back')+' draggable';
     img.src=brand.seal.dataURL; img.alt='seal';
-    img.style.cssText=stampStyleFor(brand.seal.pos||'sign-right', brand.seal.size||140);
+    img.style.cssText=stampStyleFor(brand.seal.pos, brand.seal.size||140);
+    img.title='印章 · 拖动调整位置；也可在左面板修改 X/Y 坐标';
+    attachDrag(img, 'seal');
     doc.appendChild(img);
   }
 }
@@ -746,9 +810,11 @@ function renderBrandUI(){
   const brand=getCurrentBrand();
   ['logo','seal'].forEach(kind=>{
     const drop=$(kind+'Drop'), ctrls=$(kind+'Ctrls'),
-          pos=$(kind+'Pos'), size=$(kind+'Size'), sizeVal=$(kind+'SizeVal'),
+          xEl=$(kind+'X'), yEl=$(kind+'Y'),
+          size=$(kind+'Size'), sizeVal=$(kind+'SizeVal'),
           layer=$(kind+'Layer');
     const data=brand[kind];
+    const pos = (data && data.pos && typeof data.pos.x==='number') ? data.pos : BRAND_DEFAULTS[kind].pos;
     if(!data || !data.dataURL){
       if(drop) drop.classList.remove('has-image');
       const img=drop && drop.querySelector('img'); if(img) img.remove();
@@ -758,7 +824,7 @@ function renderBrandUI(){
       if(ctrls) ctrls.style.display='none';
     } else {
       if(drop){ drop.classList.add('has-image'); }
-      const img=drop && drop.querySelector('img'); 
+      const img=drop && drop.querySelector('img');
       if(img){ img.src=data.dataURL; }
       else {
         if(drop){
@@ -768,7 +834,8 @@ function renderBrandUI(){
         }
       }
       if(ctrls) ctrls.style.display='grid';
-      if(pos) pos.value = data.pos || BRAND_DEFAULTS[kind].pos;
+      if(xEl) xEl.value = pos.x;
+      if(yEl) yEl.value = pos.y;
       if(size){ size.value = data.size || BRAND_DEFAULTS[kind].size; if(sizeVal) sizeVal.textContent = (data.size||BRAND_DEFAULTS[kind].size)+' px'; }
       if(layer) layer.value = data.layer || BRAND_DEFAULTS[kind].layer;
     }
@@ -778,7 +845,8 @@ function renderBrandUI(){
 /* UI → state（用户在 UI 里改动，立即写回 store 并刷新预览） */
 function bindBrandControl(kind){
   const drop=$(kind+'Drop'), file=$(kind+'File'),
-        pos=$(kind+'Pos'), size=$(kind+'Size'), sizeVal=$(kind+'SizeVal'),
+        xEl=$(kind+'X'), yEl=$(kind+'Y'),
+        size=$(kind+'Size'), sizeVal=$(kind+'SizeVal'),
         layer=$(kind+'Layer'), removeBtn=$(kind+'Remove');
   // 点击 drop 触发文件选择
   if(drop && file){ drop.onclick=()=>file.click(); }
@@ -813,8 +881,19 @@ function bindBrandControl(kind){
       const dt=new DataTransfer(); dt.items.add(f); file.files=dt.files; file.dispatchEvent(new Event('change'));
     });
   }
-  // 位置 / 大小 / 层级 变化立即写回
-  if(pos){ pos.onchange=()=>{ const cur=getCurrentBrand()[kind]||{}; saveBrand(kind, Object.assign({},cur,{pos:pos.value})); renderStamps(); }; }
+  // X / Y 数字框
+  if(xEl){ xEl.oninput=()=>{ const v=Math.max(0, parseFloat(xEl.value)||0); const cur=getCurrentBrand()[kind]||BRAND_DEFAULTS[kind]; const pos=cur.pos||BRAND_DEFAULTS[kind].pos; saveBrand(kind, Object.assign({},cur,{pos:{x:v,y:pos.y}})); renderStamps(); }; }
+  if(yEl){ yEl.oninput=()=>{ const v=Math.max(0, parseFloat(yEl.value)||0); const cur=getCurrentBrand()[kind]||BRAND_DEFAULTS[kind]; const pos=cur.pos||BRAND_DEFAULTS[kind].pos; saveBrand(kind, Object.assign({},cur,{pos:{x:pos.x,y:v}})); renderStamps(); }; }
+  // 快捷按钮（一键锚定 7 个常用位置）
+  document.querySelectorAll('.preset[data-kind="'+kind+'"]').forEach(btn=>{
+    btn.onclick=()=>{
+      const preset=POS_PRESETS[btn.dataset.pos]; if(!preset) return;
+      const cur=getCurrentBrand()[kind]||BRAND_DEFAULTS[kind];
+      saveBrand(kind, Object.assign({},cur,{pos:{x:preset.x,y:preset.y}}));
+      renderBrandUI(); renderStamps();
+    };
+  });
+  // 大小 / 层级 变化立即写回
   if(size){ size.oninput=()=>{ const v=parseInt(size.value,10); if(sizeVal) sizeVal.textContent=v+' px'; const cur=getCurrentBrand()[kind]||{}; saveBrand(kind, Object.assign({},cur,{size:v})); renderStamps(); }; }
   if(layer){ layer.onchange=()=>{ const cur=getCurrentBrand()[kind]||{}; saveBrand(kind, Object.assign({},cur,{layer:layer.value})); renderStamps(); }; }
   // 清除
