@@ -399,7 +399,9 @@
         </div>
 
         <div class="card" id="docInfoCard">
-          <h3>3 · 单证信息 <span class="cn">Document Info</span></h3>
+          <h3>3 · 单证信息 <span class="cn">Document Info</span>
+            <span style="font-weight:500"><button class="btn btn-sm btn-coral" id="vformBtn">导入单证信息表</button></span>
+          </h3>
           <div class="form-row">
             <div><label id="lblDocNo">发票号 Invoice No</label><input id="doc_no" placeholder="e.g. INV-2026-001"></div>
             <div><label id="lblDocDate">发票日期 Invoice Date</label><input id="doc_date" type="date"></div>
@@ -540,6 +542,28 @@
     <div class="modal-foot" id="recoFoot" style="display:none">
       <button class="btn" data-close="recoModal">取消</button>
       <button class="btn btn-primary" id="recoImport">确认导入</button>
+    </div>
+  </div>
+</div>
+
+<!-- 单证信息表（纵向收集表）导入弹窗 -->
+<div class="modal" id="vformModal">
+  <div class="modal-box">
+    <div class="modal-head"><h3>导入单证信息表 · 纵向收集表</h3><button class="modal-x" data-close="vformModal">×</button></div>
+    <div class="modal-body">
+      <p style="margin-top:0;font-size:13px;color:#4b5563">选择你的“单证信息表-V1.xlsx”。系统识别<b>纵向布局</b>：B列=分组、C列=字段名、D列及以后=各笔业务的填值列。每多填一列即为一条新单，可在下方下拉选择要导入的列。</p>
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+        <input type="file" id="vformFile" accept=".xlsx,.xls" style="font-size:12.5px">
+        <button class="btn btn-sm" id="vformRead">读取文件 →</button>
+      </div>
+      <div id="vformRecWrap" style="display:none;margin:8px 0">导入记录列 Record：
+        <select id="vformRec" style="width:auto;max-width:220px"></select>
+      </div>
+      <div id="vformMap" class="table-wrapper" style="max-height:46vh;overflow:auto"></div>
+    </div>
+    <div class="modal-foot" id="vformFoot" style="display:none">
+      <button class="btn" data-close="vformModal">取消</button>
+      <button class="btn btn-primary" id="vformImport">确认导入到表单</button>
     </div>
   </div>
 </div>
@@ -1437,6 +1461,148 @@ function importReco(){
   }
 }
 
+/* ============ 单证信息表（纵向收集表）导入 ============ */
+const VFORM_TARGET = {
+  seller_name:'卖方名称', seller_address:'卖方地址', buyer_name:'买方名称', buyer_address:'买方地址', buyer_country:'买方国家',
+  pol:'装运港', pod:'目的港', currency:'币种', payment_terms:'付款方式', delivery_terms:'贸易术语', packing:'包装方式', container_type:'柜型',
+  description:'货物描述', quantity:'数量', unit:'单位', unit_price:'单价', marks_numbers:'唛头', packages:'件数', gross_weight:'毛重', net_weight:'净重', measurement:'体积'
+};
+function vformField(section,label){
+  const s=String(section||''), l=String(label||'').toLowerCase();
+  if(s.includes('卖方')){
+    if(l.includes('名称')) return 'seller_name';
+    if(l.includes('地址')) return 'seller_address';
+    if(l.includes('联系人')||l.includes('电话')||l.includes('邮箱')) return '_seller_contact';
+    if(l.includes('信用代码')) return '_seller_tax';
+  }
+  if(s.includes('买方')){
+    if(l.includes('名称')) return 'buyer_name';
+    if(l.includes('地址')) return 'buyer_address';
+    if(l.includes('联系人')||l.includes('电话')||l.includes('邮箱')) return '_buyer_contact';
+  }
+  if(s.includes('合同')||s.includes('订单')){
+    if(l.includes('合同号')) return '_contract_no';
+    if(l.includes('签订日期')||l.includes('日期')) return '_doc_date';
+    if(l.includes('发票号')) return '_invoice_no';
+    if(l.includes('装箱单号')) return '_packing_no';
+    if(l.includes('贸易术语')) return 'delivery_terms';
+    if(l.includes('付款方式')) return 'payment_terms';
+    if(l.includes('币种')) return 'currency';
+    if(l.includes('交货')||l.includes('装运期')) return '_ship_period';
+  }
+  if(s.includes('货物')||s.includes('明细')){
+    if(l.includes('英文品名')||l.includes('品名')) return 'description';
+    if(l.includes('hs')) return '_hs';
+    if(l.includes('规格')||l.includes('型号')||l.includes('材质')) return '_spec';
+    if(l.includes('数量')&&!l.includes('总')) return 'quantity';
+    if(l.includes('单位')) return 'unit';
+    if(l.includes('单价')) return 'unit_price';
+    if(l.includes('总金额')) return '_amount';
+    if(l.includes('净重')) return 'net_weight';
+    if(l.includes('毛重')) return 'gross_weight';
+    if(l.includes('体积')) return 'measurement';
+    if(l.includes('包装')) return 'packing';
+    if(l.includes('件数')) return 'packages';
+    if(l.includes('唛头')) return 'marks_numbers';
+  }
+  if(s.includes('运输')||s.includes('提单')){
+    if(l.includes('起运港')||l.includes('pol')) return 'pol';
+    if(l.includes('目的港')||l.includes('pod')) return 'pod';
+    if(l.includes('目的国')||l.includes('最终目的地')) return 'buyer_country';
+    if(l.includes('柜型')||l.includes('柜量')) return 'container_type';
+  }
+  if(s.includes('危险品')||s.includes('电池')){
+    if(l.includes('un')) return '_un';
+    if(l.includes('类别')||l.includes('class')) return '_class';
+  }
+  if(s.includes('其他')||s.includes('补充')){
+    if(l.includes('备注')||l.includes('要求')) return '_remarks';
+  }
+  return null;
+}
+let vformState=null;
+function openVForm(){ $('vformFile').value=''; $('vformMap').innerHTML=''; $('vformFoot').style.display='none'; $('vformRecWrap').style.display='none'; openModal('vformModal'); }
+function colLetter(ci){ let n=ci+1,s=''; while(n>0){ const m=(n-1)%26; s=String.fromCharCode(65+m)+s; n=Math.floor((n-1)/26); } return s; }
+function vformLoadFile(){
+  const f=$('vformFile').files[0]; if(!f){ toast('请先选择 .xlsx 文件'); return; }
+  if(typeof XLSX==='undefined'){ toast('Excel 库未加载（需联网）'); return; }
+  const fr=new FileReader();
+  fr.onload=e=>{ try{
+    const wb=XLSX.read(e.target.result,{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+    const nCols=aoa.reduce((m,r)=>Math.max(m,(r&&r.length)||0),0);
+    const dataCols=[];
+    for(let ci=3; ci<nCols; ci++){ let has=false; for(const r of aoa){ if(r[ci]!==''&&r[ci]!=null){has=true;break;} } if(has) dataCols.push(ci); }
+    if(!dataCols.length){ toast('未找到填值列（D列及以后应为空）'); return; }
+    const rows=[];
+    for(const r of aoa){
+      const section=(r[1]!=null?String(r[1]):'').trim();
+      const label=(r[2]!=null?String(r[2]):'').trim();
+      if(!label) continue;
+      const vals=dataCols.map(ci=> (r[ci]!=null?String(r[ci]).trim():''));
+      rows.push({section,label,vals});
+    }
+    vformState={dataCols, rows};
+    if(dataCols.length>1){
+      $('vformRec').innerHTML=dataCols.map((ci,i)=>`<option value="${i}">${colLetter(ci)} 列（第 ${i+1} 笔）</option>`).join('');
+      $('vformRec').onchange=()=>vformPreview(parseInt($('vformRec').value,10));
+      $('vformRecWrap').style.display='block';
+    } else { $('vformRecWrap').style.display='none'; }
+    vformPreview(0);
+    toast('已读取 '+f.name+'：'+dataCols.length+' 笔记录');
+  } catch(err){ toast('解析失败：'+err.message); } };
+  fr.readAsArrayBuffer(f);
+}
+function buildVFormRecord(colIdx){
+  const rec={};
+  if(!vformState) return rec;
+  vformState.rows.forEach(r=>{ const f=vformField(r.section,r.label); if(!f) return; rec[f]=r.vals[colIdx]||''; });
+  return rec;
+}
+function vformPreview(colIdx){
+  if(!vformState) return;
+  let html='<table class="items"><thead><tr><th>分组</th><th>字段名</th><th>映射到</th><th>值</th></tr></thead><tbody>';
+  vformState.rows.forEach(r=>{
+    const f=vformField(r.section,r.label);
+    const tgt=f?(VFORM_TARGET[f]||f):'（忽略）';
+    const val=r.vals[colIdx]||'';
+    html+=`<tr><td>${esc(r.section)}</td><td>${esc(r.label)}</td><td>${esc(tgt)}</td><td>${esc(val)}</td></tr>`;
+  });
+  html+='</tbody></table>';
+  $('vformMap').innerHTML=html;
+  $('vformFoot').style.display='flex';
+}
+function applyVForm(){
+  if(!vformState) return;
+  const colIdx = ($('vformRecWrap').style.display!=='none') ? parseInt($('vformRec').value,10) : 0;
+  const rec=buildVFormRecord(colIdx);
+  const d=$('docType').value;
+  const setF=(id,v)=>{ if(v!==''&&$(id)) $(id).value=v; };
+  setF('seller_name',rec.seller_name||''); setF('seller_address',rec.seller_address||'');
+  setF('buyer_name',rec.buyer_name||''); setF('buyer_address',rec.buyer_address||'');
+  setF('buyer_country',rec.buyer_country||'');
+  setF('pol',rec.pol||''); setF('pod',rec.pod||'');
+  setF('currency',rec.currency||''); setF('payment_terms',rec.payment_terms||'');
+  setF('delivery_terms',rec.delivery_terms||''); setF('packing',rec.packing||'');
+  setF('container_type',rec.container_type||'');
+  const no = d==='invoice'?rec._invoice_no : d==='packing'?rec._packing_no : d==='contract'?rec._contract_no : (rec._invoice_no||rec._packing_no||rec._contract_no||'');
+  if(no) $('doc_no').value=no;
+  if(rec._doc_date) $('doc_date').value=rec._doc_date;
+  let desc=[rec.description||''];
+  if(rec._hs) desc.push('HS '+rec._hs);
+  if(rec._spec) desc.push(rec._spec);
+  if(rec._un) desc.push('UN '+rec._un+(rec._class?(' Class '+rec._class):''));
+  const it=blankItem();
+  it.description=desc.filter(Boolean).join('  ');
+  it.quantity=rec.quantity||''; it.unit=rec.unit||''; it.unit_price=rec.unit_price||'';
+  it.marks_numbers=rec.marks_numbers||''; it.packages=rec.packages||'';
+  it.gross_weight=rec.gross_weight||''; it.net_weight=rec.net_weight||''; it.measurement=rec.measurement||'';
+  state.items=[it];
+  renderItemsTable(); renderPreview(); closeModal('vformModal');
+  toast('已导入单证信息表 → 表单');
+}
+
 /* ============ 导出 ============ */
 function buildSheetData(){
   const d=g();
@@ -1604,6 +1770,10 @@ $('addRowBtn').onclick=()=>{ state.items.push(blankItem()); renderItemsTable(); 
 ['reference_contract','price_terms','carrier','vessel','bl_no','container_type','quantity_basis','amount_in_words'].forEach(id=>{ const el=$(id); if(el) el.addEventListener('input',renderPreview); });
 $('addCtrBtn').onclick=()=>{ state.containers.push(blankContainer()); renderContainerTable(); renderPreview(); };
 $('pasteBtn').onclick=()=>{ $('pasteArea').value=''; $('recoResult').style.display='none'; $('recoFoot').style.display='none'; openModal('recoModal'); };
+$('vformBtn').onclick=openVForm;
+$('vformRead').onclick=vformLoadFile;
+$('vformFile').onchange=vformLoadFile;
+$('vformImport').onclick=applyVForm;
 $('recoRun').onclick=runReco;
 $('recoImport').onclick=importReco;
 $('recoLoadFile').onclick=()=>{
